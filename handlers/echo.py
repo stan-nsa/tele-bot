@@ -1,4 +1,5 @@
 from aiogram import Router, types
+from html import escape
 
 
 router = Router(name=__name__)
@@ -6,5 +7,6 @@ router = Router(name=__name__)
 
 @router.message()
 async def handler_command_help(message: types.Message):
-    await message.answer(
-        text=message.text)
+    await message.send_copy(chat_id=message.chat.id)
+    #await message.answer(text=escape(message.text))
+    #await message.answer(text=message.text)
