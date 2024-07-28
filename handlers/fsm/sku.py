@@ -15,10 +15,11 @@ img_folder = os.path.abspath(IMG_FOLDER)
 
 # Состояния для загрузки информации по товару
 class FSMSku(StatesGroup):
-    name = State()      # Состояние для ввода артикула
+    name = State()      # Состояние для ввода артикула товара
     photos = State()    # Состояние для загрузки фото товара
 
 
+# Обработчик комады /sku запуска машины состояний для добавления товара
 @router.message(Command('sku', ignore_case=True), StateFilter(default_state))
 async def handler_command_sku(message: types.Message, state: FSMContext):
     await state.set_state(FSMSku.name)
@@ -29,6 +30,7 @@ async def handler_command_sku(message: types.Message, state: FSMContext):
     )
 
 
+# Обработчик состояния для ввода артикула товара
 @router.message(StateFilter(FSMSku.name))
 async def handler_sku_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
@@ -40,6 +42,7 @@ async def handler_sku_name(message: types.Message, state: FSMContext):
     )
 
 
+# Обработчик состояния для добавдения фото товара
 @router.message(StateFilter(FSMSku.photos), F.photo)
 async def handler_sku_photos(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -56,6 +59,7 @@ async def handler_sku_photos(message: types.Message, state: FSMContext):
     )
 
 
+# Обработчик комады /save для завершения машины состояний добавления товара и сохранения фото товара
 @router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
 async def handler_sku_save(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -74,4 +78,3 @@ async def handler_sku_save(message: types.Message, state: FSMContext):
     await message.reply(
         text=f"Товар: <b>{sku}</b> сохранен!"
     )
-
