@@ -1,0 +1,77 @@
+import os
+from aiogram import Router, types, F
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.state import State, StatesGroup, default_state
+from aiogram.fsm.context import FSMContext
+
+
+router = Router(name=__name__)
+
+
+IMG_FOLDER = 'd:/Projects/tele-bot/img'
+IMG_FILE_NAME_TEMPLATE = '%s-%d.jpg'
+img_folder = os.path.abspath(IMG_FOLDER)
+
+
+# Состояния для загрузки информации по товару
+class FSMSku(StatesGroup):
+    name = State()      # Состояние для ввода артикула
+    photos = State()    # Состояние для загрузки фото товара
+
+
+@router.message(Command('sku', ignore_case=True), StateFilter(default_state))
+async def handler_command_sku(message: types.Message, state: FSMContext):
+    await state.set_state(FSMSku.name)
+
+    await message.reply(
+        text=f"Начинаем добавлять товар.\n\n"
+             f"Введи артикул товара:"
+    )
+
+
+@router.message(StateFilter(FSMSku.name))
+async def handler_sku_name(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await state.set_state(FSMSku.photos)
+
+    await message.reply(
+        text=f"Артикул товара: <b>{message.text}</b>.\n\n"
+             f"Сфотографируй товар:"
+    )
+
+
+@router.message(StateFilter(FSMSku.photos), F.photo)
+async def handler_sku_photos(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    photos = data.get('photos')
+
+    if photos is None:
+        photos = list()
+
+    photos.append(message.photo[-1].file_id)
+    await state.update_data(photos=photos)
+
+    await message.reply(
+        text=f"Фото получено"
+    )
+
+
+@router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
+async def handler_sku_save(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+
+    sku = data.get('name')
+    photos = data.get('photos')
+
+    for i, photo in enumerate(photos, start=1):
+        await message.bot.download(
+            file=photo,
+            destination=os.path.join(img_folder, IMG_FILE_NAME_TEMPLATE % (sku, i))
+        )
+
+    await state.clear()
+
+    await message.reply(
+        text=f"Товар: <b>{sku}</b> сохранен!"
+    )
+

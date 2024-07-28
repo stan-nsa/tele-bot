@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommandScopeDefault
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from handlers import router as handlers_router
 from handlers.commands.commands_menu import commands_menu
@@ -16,7 +17,7 @@ env.read_env()
 
 
 async def main():
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
 
     bot = Bot(token=env('BOT_TOKEN'),
@@ -30,7 +31,11 @@ async def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)  # , stream=sys.stdout)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        # stream=sys.stdout,
+    )
 
     try:
         asyncio.run(main())

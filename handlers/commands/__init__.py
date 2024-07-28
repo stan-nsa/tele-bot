@@ -4,6 +4,5 @@ from .admin_commands import router as admin_commands
 
 
 router = Router()
-
 router.include_router(main_commands)
 router.include_router(admin_commands)
