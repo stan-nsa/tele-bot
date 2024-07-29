@@ -10,28 +10,13 @@
 
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from .others import get_kb_yes_no
 
 
-def get_kb_sku():
+def get_kb_yes_no(prefix=''):
     kb = InlineKeyboardBuilder()
     kb.add(
-        InlineKeyboardButton(text="📦 Добавить товар", callback_data="sku_add"),
+        InlineKeyboardButton(text="✔️ Да", callback_data=f"{prefix}btn_yes"),
+        InlineKeyboardButton(text="❌ Нет", callback_data=f"{prefix}btn_no"),
     )
-    kb.adjust(1)
+    kb.adjust(2)
     return kb.as_markup()
-
-
-def get_kb_sku_name():
-    kb = InlineKeyboardBuilder()
-    kb.add(
-        InlineKeyboardButton(text="✅ Верно", callback_data="sku_name_ok"),
-        InlineKeyboardButton(text="📝 Изменить", callback_data="sku_name_edit"),
-        InlineKeyboardButton(text="❌ Отменить", callback_data="sku_cancel"),
-    )
-    kb.adjust(1, 2)
-    return kb.as_markup()
-
-
-def get_kb_sku_cancel():
-    return get_kb_yes_no(prefix="sku_cancel_")
