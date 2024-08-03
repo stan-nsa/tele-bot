@@ -30,18 +30,7 @@ def get_kb_sku_name():
     kb = InlineKeyboardBuilder()
     kb.add(
         InlineKeyboardButton(text="✅ Верно", callback_data="sku_name_ok"),
-        InlineKeyboardButton(text="📝 Изменить", callback_data="sku_name_edit"),
-        InlineKeyboardButton(text="❌ Отменить", callback_data="sku_cancel"),
-    )
-    kb.adjust(1, 2)
-    return kb.as_markup()
-
-
-def get_kb_sku_photo():
-    kb = InlineKeyboardBuilder()
-    kb.add(
-        InlineKeyboardButton(text="📦 Завершить добавление товара", callback_data="sku_save"),
-        InlineKeyboardButton(text="🗑️ Удалить это фото", callback_data="sku_photo_delete"),
+        InlineKeyboardButton(text="📝 Изменить артикул", callback_data="sku_name_edit"),
         InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
     )
     kb.adjust(1, 1, 1)
@@ -49,4 +38,25 @@ def get_kb_sku_photo():
 
 
 def get_kb_sku_cancel():
+    kb = InlineKeyboardBuilder()
+    kb.add(
+        InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
+    )
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def get_kb_sku_photo():
+    kb = InlineKeyboardBuilder()
+    kb.add(
+        InlineKeyboardButton(text="📸 Доавить ещё фото товара", callback_data="sku_photo_add"),
+        InlineKeyboardButton(text="📦 Завершить добавление товара", callback_data="sku_save"),
+        InlineKeyboardButton(text="🗑️ Удалить это фото", callback_data="sku_photo_delete"),
+        InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
+    )
+    kb.adjust(1, 1, 1, 1)
+    return kb.as_markup()
+
+
+def get_kb_sku_cancel_yes_no():
     return get_kb_yes_no(prefix="sku_cancel_")
