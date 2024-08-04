@@ -18,20 +18,21 @@ router = Router(name=__name__)
 
 IMG_FOLDER = 'd:/Projects/tele-bot/img'
 IMG_FILE_NAME_TEMPLATE = '%s-%d_%dx%d.jpg'
+# IMG_FILE_NAME_TEMPLATE = '%s-%d.jpg'
 img_folder = os.path.abspath(IMG_FOLDER)
 
 
 # Состояния для загрузки информации по товару
 class FSMSku(StatesGroup):
-    name = State()  # Состояние для ввода артикула товара
-    photos = State()  # Состояние для загрузки фото товара
+    name = State()      # Состояние для ввода артикула товара
+    photos = State()    # Состояние для загрузки фото товара
 
 
 # Класс описывающий структуру данных размера фото товара
 class SkuPhotoSize:
-    file_id: str  # Идентификатор файла
-    width: int  # Ширина фото в пикселях
-    height: int  # Высота фото в пикселях
+    file_id: str    # Идентификатор файла
+    width: int      # Ширина фото в пикселях
+    height: int     # Высота фото в пикселях
 
     # Конструктор класса
     def __init__(self,
@@ -49,15 +50,15 @@ class SkuPhotoSize:
 
 # Класс описывающий структуру данных фото товара
 class SkuPhoto:
-    name: str  # Имя файла
-    chat_id: int  # Идентификатор чата
-    message_id: int  # Идентификатор сообщения, содержащего фото
-    sizes: list[SkuPhotoSize]  # Список размеров фотографии товара
+    name: str                       # Имя файла
+    chat_id: int                    # Идентификатор чата
+    message_id: int                 # Идентификатор сообщения, содержащего фото
+    sizes: list[SkuPhotoSize]       # Список размеров фотографии товара
 
     # Конструктор класса
     def __init__(self,
                  message: types.Message = None,
-                 sizes: list[SkuPhotoSize | types.PhotoSize] = None,
+                 sizes: list[types.PhotoSize] = None,
                  chat_id: int = None, message_id: int = None, name: str = None):
         self.name = name
         self.sizes = list[SkuPhotoSize]()
@@ -67,7 +68,6 @@ class SkuPhoto:
             self.message_id = message.message_id
             sizes = message.photo
         else:
-            self.name = name
             self.chat_id = chat_id
             self.message_id = message_id
 
@@ -79,9 +79,9 @@ class SkuPhoto:
 
 # Класс описывающий структуру данных товара
 class SkuData:
-    id: str  # Идентификатор
-    name: str  # Артикул
-    photos: {int: SkuPhoto}  # Словарь фотографий товара dict(message_id=SkuPhoto)
+    id: str                     # Идентификатор
+    name: str                   # Артикул
+    photos: {int: SkuPhoto}     # Словарь фотографий товара dict(message_id=SkuPhoto)
 
     # Конструктор класса
     def __init__(self, sku_id: str = None, name: str = None, photos: {int: SkuPhoto} = None):
@@ -114,7 +114,6 @@ class SkuData:
 @router.message(Command('add', ignore_case=True), StateFilter(default_state))
 @router.callback_query(F.data == "sku_add", StateFilter(default_state))
 async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
-    # async def handler_cmd_add(message: types.Message, state: FSMContext, from_inline_button: bool = False):
     await state.set_state(FSMSku.name)
 
     data = dict(sku_data=SkuData())
@@ -136,13 +135,6 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
             reply_markup=keyboards.get_kb_sku_cancel()
         )
         await msg_cbq.delete()
-
-
-# Обработчик кнопки "Добавить товар" для запуска машины состояний для добавления товара
-# @router.callback_query(F.data == "sku_add", StateFilter(default_state))
-# async def handler_sku_add(callback: types.CallbackQuery, state: FSMContext):
-#     await callback.answer()
-#     await handler_cmd_add(callback.message, state, from_inline_button=True)
 
 
 # == Команды Отмены ===============================================================================
