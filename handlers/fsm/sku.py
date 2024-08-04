@@ -17,7 +17,7 @@ import keyboards
 router = Router(name=__name__)
 
 IMG_FOLDER = 'd:/Projects/tele-bot/img'
-IMG_FILE_NAME_TEMPLATE = '%s-%d.jpg'
+IMG_FILE_NAME_TEMPLATE = '%s-%d_%dx%d.jpg'
 img_folder = os.path.abspath(IMG_FOLDER)
 
 
@@ -49,9 +49,9 @@ class SkuPhotoSize:
 
 # Класс описывающий структуру данных фото товара
 class SkuPhoto:
-    name: str           # Имя файла
-    chat_id: int
-    message_id: int
+    name: str                   # Имя файла
+    chat_id: int                # Идентификатор чата
+    message_id: int             # Идентификатор сообщения, содержащего фото
     sizes: list[SkuPhotoSize]   # Список размеров фотографии товара
 
     # Конструктор класса
@@ -79,13 +79,15 @@ class SkuPhoto:
 
 # Класс описывающий структуру данных товара
 class SkuData:
-    name: str       # Артикул
-    photos: list[SkuPhoto]    # Список фотографий товара
+    id:     str                 # Идентификатор
+    name:   str                 # Артикул
+    photos: {int: SkuPhoto}     # Словарь фотографий товара dict(message_id=SkuPhoto)
 
     # Конструктор класса
-    def __init__(self, name: str = '', photos: list = None):
+    def __init__(self, id: str = None, name: str = None, photos: {int: SkuPhoto} = None):
+        self.id = id
         self.name = name
-        self.photos = photos if photos is not None else list[SkuPhoto]()
+        self.photos = photos if photos is not None else dict()
 
     # Артикул жирным текстом
     def get_name_text(self):
@@ -103,7 +105,7 @@ class SkuData:
 
         await chat.bot.delete_messages(
             chat.id,
-            [p.message_id for p in self.photos]
+            [p.message_id for p in self.photos.values()]
         )
         self.photos.clear()
 
@@ -248,7 +250,7 @@ async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMCont
     sku_data = data['sku_data']
 
     if len(sku_data.photos):
-        sku_data.photos.pop()
+        sku_data.photos.pop(message.reply_to_message.message_id)
         await state.set_data(data)
 
         await message.reply_to_message.delete()
@@ -271,9 +273,9 @@ async def handler_cmd_save(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
-    for i, photo in enumerate(sku_data.photos, start=1):
+    for i, photo in enumerate(sku_data.photos.values(), start=1):
         photo_largest = photo.sizes[-1]
-        photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i)
+        photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i, photo_largest.width, photo_largest.height)
         await message.bot.download(
             file=photo_largest,
             destination=os.path.join(img_folder, photo_largest.name)
@@ -328,7 +330,7 @@ async def handler_sku_photos(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
-    sku_data.photos.append(SkuPhoto(message=message))
+    sku_data.photos[message.message_id] = SkuPhoto(message=message)
 
     await state.set_data(data)
 
