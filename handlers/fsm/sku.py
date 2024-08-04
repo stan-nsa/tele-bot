@@ -1,11 +1,3 @@
-# 📸 - https://emojis.wiki/ru/fotokamera-so-vspyshkoj/
-# ⁉️ - https://emojis.wiki/ru/vosklicatelnyj-i-voprositelnyj-znaki-krasnogo-cveta/
-# 📝 - https://emojis.wiki/ru/pamyatka/
-# ✅ - https://emojis.wiki/ru/zelenaya-galochka/
-# ✔️ - https://emojis.wiki/ru/galochka/
-# ❌ - https://emojis.wiki/ru/znachok-kresta/
-
-
 import os
 from aiogram import Router, types, F
 from aiogram.filters import Command, StateFilter
@@ -110,7 +102,8 @@ class SkuData:
         self.photos.clear()
 
 
-# Обработчик комады /add для запуска машины состояний для добавления товара
+# == Добавление товара ============================================================================
+# Обработчик комады /add и кнопки "Добавить товар" для запуска машины состояний для добавления товара
 @router.message(Command('add', ignore_case=True), StateFilter(default_state))
 @router.callback_query(F.data == "sku_add", StateFilter(default_state))
 async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
@@ -135,35 +128,32 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
             reply_markup=keyboards.get_kb_sku_cancel()
         )
         await msg_cbq.delete()
+# =================================================================================================
 
 
-# == Команды Отмены ===============================================================================
-# Обработчик комады /cancel для остановки машины состояний добавления товара
+# == Отмена добавления товара =====================================================================
+# Обработчик комады /cancel и кнопки "Отменить добавление товара" для остановки машины состояний добавления товара
 @router.message(Command('cancel', ignore_case=True), ~StateFilter(default_state))
-async def handler_cmd_cancel(message: types.Message, state: FSMContext, from_inline_button: bool = False):
+@router.callback_query(F.data == "sku_cancel", ~StateFilter(default_state))
+async def handler_cmd_cancel(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
     text = f"⁉️ Вы действительно хотите отменить добавление товара{sku_data.get_name_text2()}?"
 
-    if from_inline_button:
-        await message.edit_text(
+    if type(msg_cbq) is types.CallbackQuery:
+        await msg_cbq.answer()
+
+        await msg_cbq.message.edit_text(
             text=text,
             reply_markup=keyboards.get_kb_sku_cancel_yes_no()
         )
     else:
-        await message.answer(
+        await msg_cbq.answer(
             text=text,
             reply_markup=keyboards.get_kb_sku_cancel_yes_no()
         )
-        await message.delete()
-
-
-# Обработчик кнопки "Отменить" для остановки машины состояний добавления товара
-@router.callback_query(F.data == "sku_cancel", ~StateFilter(default_state))
-async def handler_sku_cancel(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await handler_cmd_cancel(callback.message, state, from_inline_button=True)
+        await msg_cbq.delete()
 
 
 # Обработчик кнопки "Да" для подтверждения остановки машины состояний добавления товара
@@ -198,11 +188,29 @@ async def handler_sku_cancel_no(callback: types.CallbackQuery, state: FSMContext
         await handler_sku_name_ok(callback, state)
     else:
         await handler_sku_add(callback, state)
-
-
 # =================================================================================================
 
 
+# == Артикул товара ===============================================================================
+# Обработчик кнопки "Верно" состояния для ввода артикула товара
+@router.callback_query(F.data == "sku_name_ok", StateFilter(FSMSku.name))
+async def handler_sku_name_ok(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    await state.set_state(FSMSku.photos)
+
+    await handler_sku_photo_add(callback, state)
+
+
+# Обработчик кнопки "Изменить артикул" состояния для ввода артикула товара
+@router.callback_query(F.data == "sku_name_edit", StateFilter(FSMSku.name))
+async def handler_sku_name_edit(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await handler_sku_add(callback, state)
+# =================================================================================================
+
+
+# == Фото товара ==================================================================================
 # Обработчик кнопки "Доавить ещё фото товара" состояния для ввода артикула товара
 @router.callback_query(F.data == "sku_photo_add", StateFilter(FSMSku.photos))
 async def handler_sku_photo_add(callback: types.CallbackQuery, state: FSMContext):
@@ -218,23 +226,6 @@ async def handler_sku_photo_add(callback: types.CallbackQuery, state: FSMContext
              f"📸 Сфотографируйте товар:",
         reply_markup=keyboards.get_kb_sku_save_cancel()
     )
-
-
-# Обработчик кнопки "Верно" состояния для ввода артикула товара
-@router.callback_query(F.data == "sku_name_ok", StateFilter(FSMSku.name))
-async def handler_sku_name_ok(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-
-    await state.set_state(FSMSku.photos)
-
-    await handler_sku_photo_add(callback, state)
-
-
-# Обработчик кнопки "Верно" состояния для ввода артикула товара
-@router.callback_query(F.data == "sku_name_edit", StateFilter(FSMSku.name))
-async def handler_sku_name_edit(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await handler_sku_add(callback, state)
 
 
 # Обработчик кнопки "Удалить это фото" для подтверждения остановки машины состояний добавления товара
@@ -262,38 +253,39 @@ async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMCont
                 ]
             ),
         )
+# =================================================================================================
 
 
-# Обработчик комады /save для завершения машины состояний добавления товара и сохранения фото товара
+# == Сохранение товара ============================================================================
+# Обработчик комады /save и кнопки "Завершить добавление товара"
+# для завершения машины состояний добавления товара и сохранения фото товара
 @router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
-async def handler_cmd_save(message: types.Message, state: FSMContext):
+@router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
+async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
     for i, photo in enumerate(sku_data.photos.values(), start=1):
         photo_largest = photo.sizes[-1]
         photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i, photo_largest.width, photo_largest.height)
-        await message.bot.download(
+        # photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i)
+        await msg_cbq.bot.download(
             file=photo_largest,
             destination=os.path.join(img_folder, photo_largest.name)
         )
 
     await state.clear()
 
-    await message.answer(
+    if type(msg_cbq) is types.CallbackQuery:
+        await msg_cbq.answer()
+        await msg_cbq.message.delete_reply_markup()
+        msg_cbq = msg_cbq.message
+
+    await msg_cbq.answer(
         text=f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен (сохранено {len(sku_data.photos)} фото)!",
         reply_markup=keyboards.get_kb_sku()
     )
-
-
-# Обработчик кнопки "Завершить добавление товара" для завершения машины состояний добавления товара и сохранения фото
-@router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
-async def handler_sku_save(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-
-    message = callback.message
-    await message.delete_reply_markup()
-    await handler_cmd_save(message, state)
+# =================================================================================================
 
 
 # Обработчик состояния для ввода артикула товара
@@ -309,6 +301,7 @@ async def handler_state_name(message: types.Message, state: FSMContext):
              f"⁉️ Всё верно?",
         reply_markup=keyboards.get_kb_sku_name()
     )
+# =================================================================================================
 
 
 # Обработчик состояния для ввода артикула товара, если прислали не текст
@@ -319,6 +312,7 @@ async def handler_state_name_not_text(message: types.Message):
              f"📝 Введите артикул товара:",
         reply_markup=keyboards.get_kb_sku_cancel()
     )
+# =================================================================================================
 
 
 # Обработчик состояния для добавдения фото товара
@@ -335,6 +329,7 @@ async def handler_sku_photos(message: types.Message, state: FSMContext):
         text=f"✅ 📸 Фото для товара{sku_data.get_name_text2()} получено!",
         reply_markup=keyboards.get_kb_sku_photo()
     )
+# =================================================================================================
 
 
 # Обработчик состояния для добавдения фото товара, если прислали не фото
@@ -345,3 +340,4 @@ async def handler_sku_photos_not_photo(message: types.Message):
              f"📸 Сфотографируйте товар:",
         reply_markup=keyboards.get_kb_sku_save_cancel()
     )
+# =================================================================================================
