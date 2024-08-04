@@ -16,14 +16,32 @@ from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from .others import get_kb_yes_no
 
+sku_kb_buttons = dict(
+    add=InlineKeyboardButton(text="📦 Добавить товар", callback_data="sku_add"),
+    cancel=InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
+    save=InlineKeyboardButton(text="📦 Завершить добавление товара", callback_data="sku_save"),
+    photo_add=InlineKeyboardButton(text="📸 Добавить ещё фото товара", callback_data="sku_photo_add"),
+    photo_delete=InlineKeyboardButton(text="🗑️ Удалить это фото", callback_data="sku_photo_delete"),
+
+)
+
+
+def get_kb_sku_builder(buttons: list[str], adjust: list[int] | int = 1):
+    kb = InlineKeyboardBuilder()
+    for btn in buttons:
+        kb.add(sku_kb_buttons.get(btn))
+
+    if adjust:
+        if type(adjust) is list:
+            kb.adjust(*adjust)
+        elif type(adjust) is int:
+            kb.adjust(adjust)
+
+    return kb.as_markup()
+
 
 def get_kb_sku():
-    kb = InlineKeyboardBuilder()
-    kb.add(
-        InlineKeyboardButton(text="📦 Добавить товар", callback_data="sku_add"),
-    )
-    kb.adjust(1)
-    return kb.as_markup()
+    return get_kb_sku_builder(buttons=['add'])
 
 
 def get_kb_sku_name():
@@ -31,31 +49,34 @@ def get_kb_sku_name():
     kb.add(
         InlineKeyboardButton(text="✅ Верно", callback_data="sku_name_ok"),
         InlineKeyboardButton(text="📝 Изменить артикул", callback_data="sku_name_edit"),
-        InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
-    )
-    kb.adjust(1, 1, 1)
-    return kb.as_markup()
-
-
-def get_kb_sku_cancel():
-    kb = InlineKeyboardBuilder()
-    kb.add(
-        InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
+        sku_kb_buttons.get('cancel'),
     )
     kb.adjust(1)
     return kb.as_markup()
 
 
+def get_kb_sku_cancel():
+    return get_kb_sku_builder(buttons=['cancel'])
+
+
 def get_kb_sku_photo():
-    kb = InlineKeyboardBuilder()
-    kb.add(
-        InlineKeyboardButton(text="📸 Доавить ещё фото товара", callback_data="sku_photo_add"),
-        InlineKeyboardButton(text="📦 Завершить добавление товара", callback_data="sku_save"),
-        InlineKeyboardButton(text="🗑️ Удалить это фото", callback_data="sku_photo_delete"),
-        InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
+    return get_kb_sku_builder(
+        buttons=[
+            'photo_add',
+            'save',
+            'photo_delete',
+            'cancel',
+        ]
     )
-    kb.adjust(1, 1, 1, 1)
-    return kb.as_markup()
+
+
+def get_kb_sku_save_cancel():
+    return get_kb_sku_builder(
+        buttons=[
+            'save',
+            'cancel',
+        ]
+    )
 
 
 def get_kb_sku_cancel_yes_no():
