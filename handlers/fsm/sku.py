@@ -29,9 +29,9 @@ class FSMSku(StatesGroup):
 
 # Класс описывающий структуру данных размера фото товара
 class SkuPhotoSize:
-    file_id: str    # Идентификатор файла
-    width: int      # Ширина фото в пикселях
-    height: int     # Высота фото в пикселях
+    file_id: str  # Идентификатор файла
+    width: int  # Ширина фото в пикселях
+    height: int  # Высота фото в пикселях
 
     # Конструктор класса
     def __init__(self,
@@ -49,10 +49,10 @@ class SkuPhotoSize:
 
 # Класс описывающий структуру данных фото товара
 class SkuPhoto:
-    name: str                   # Имя файла
-    chat_id: int                # Идентификатор чата
-    message_id: int             # Идентификатор сообщения, содержащего фото
-    sizes: list[SkuPhotoSize]   # Список размеров фотографии товара
+    name: str  # Имя файла
+    chat_id: int  # Идентификатор чата
+    message_id: int  # Идентификатор сообщения, содержащего фото
+    sizes: list[SkuPhotoSize]  # Список размеров фотографии товара
 
     # Конструктор класса
     def __init__(self,
@@ -79,24 +79,24 @@ class SkuPhoto:
 
 # Класс описывающий структуру данных товара
 class SkuData:
-    id:     str                 # Идентификатор
-    name:   str                 # Артикул
-    photos: {int: SkuPhoto}     # Словарь фотографий товара dict(message_id=SkuPhoto)
+    id: str  # Идентификатор
+    name: str  # Артикул
+    photos: {int: SkuPhoto}  # Словарь фотографий товара dict(message_id=SkuPhoto)
 
     # Конструктор класса
-    def __init__(self, id: str = None, name: str = None, photos: {int: SkuPhoto} = None):
-        self.id = id
+    def __init__(self, sku_id: str = None, name: str = None, photos: {int: SkuPhoto} = None):
+        self.id = sku_id
         self.name = name
         self.photos = photos if photos is not None else dict()
 
     # Артикул жирным текстом
     def get_name_text(self):
-        name_text = f"<b>{self.name}</b>" if len(self.name) else ''
+        name_text = f"<b>{self.name}</b>" if self.name and len(self.name) else ''
         return name_text
 
     # Часть текста с артикулом жирным текстом
     def get_name_text2(self):
-        name_text = f" с артикулом: {self.get_name_text()}" if len(self.name) else ''
+        name_text = f" с артикулом: {self.get_name_text()}" if self.name and len(self.name) else ''
         return name_text
 
     async def delete_photos_from_chat(self, chat: types.Chat = None):
@@ -112,7 +112,9 @@ class SkuData:
 
 # Обработчик комады /add для запуска машины состояний для добавления товара
 @router.message(Command('add', ignore_case=True), StateFilter(default_state))
-async def handler_cmd_add(message: types.Message, state: FSMContext, from_inline_button: bool = False):
+@router.callback_query(F.data == "sku_add", StateFilter(default_state))
+async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
+    # async def handler_cmd_add(message: types.Message, state: FSMContext, from_inline_button: bool = False):
     await state.set_state(FSMSku.name)
 
     data = dict(sku_data=SkuData())
@@ -121,24 +123,26 @@ async def handler_cmd_add(message: types.Message, state: FSMContext, from_inline
     text = "Начинаем добавлять товар.\n\n" \
            "📝 Введите артикул товара:"
 
-    if from_inline_button:
-        await message.edit_text(
+    if type(msg_cbq) is types.CallbackQuery:
+        await msg_cbq.answer()
+
+        await msg_cbq.message.edit_text(
             text=text,
             reply_markup=keyboards.get_kb_sku_cancel()
         )
     else:
-        await message.answer(
+        await msg_cbq.answer(
             text=text,
             reply_markup=keyboards.get_kb_sku_cancel()
         )
-        await message.delete()
+        await msg_cbq.delete()
 
 
 # Обработчик кнопки "Добавить товар" для запуска машины состояний для добавления товара
-@router.callback_query(F.data == "sku_add", StateFilter(default_state))
-async def handler_sku_add(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await handler_cmd_add(callback.message, state, from_inline_button=True)
+# @router.callback_query(F.data == "sku_add", StateFilter(default_state))
+# async def handler_sku_add(callback: types.CallbackQuery, state: FSMContext):
+#     await callback.answer()
+#     await handler_cmd_add(callback.message, state, from_inline_button=True)
 
 
 # == Команды Отмены ===============================================================================
@@ -198,10 +202,12 @@ async def handler_sku_cancel_no(callback: types.CallbackQuery, state: FSMContext
     data = await state.get_data()
     sku_data = data['sku_data']
 
-    if len(sku_data.name):
+    if sku_data.name and len(sku_data.name):
         await handler_sku_name_ok(callback, state)
     else:
         await handler_sku_add(callback, state)
+
+
 # =================================================================================================
 
 
@@ -236,8 +242,7 @@ async def handler_sku_name_ok(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "sku_name_edit", StateFilter(FSMSku.name))
 async def handler_sku_name_edit(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    message = callback.message
-    await handler_cmd_add(message, state)
+    await handler_sku_add(callback, state)
 
 
 # Обработчик кнопки "Удалить это фото" для подтверждения остановки машины состояний добавления товара
