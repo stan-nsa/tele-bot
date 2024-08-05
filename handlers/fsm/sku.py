@@ -263,6 +263,7 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
     data = await state.get_data()
     sku_data = data['sku_data']
 
+    saved_files_text = ''
     for i, photo in enumerate(sku_data.photos.values(), start=1):
         photo_largest = photo.sizes[-1]
         photo_largest.name = config.IMG_FILE_NAME_TEMPLATE % (
@@ -272,6 +273,7 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
             file=photo_largest,
             destination=os.path.join(img_folder, photo_largest.name)
         )
+        saved_files_text += f"🎞️ {photo_largest.name} - разрешение: {photo_largest.width} x {photo_largest.height}\n"
 
     await state.clear()
 
@@ -281,7 +283,9 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
         msg_cbq = msg_cbq.message
 
     await msg_cbq.answer(
-        text=f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен (сохранено {len(sku_data.photos)} фото)!",
+        text=f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n"
+             f"Сохранено {len(sku_data.photos)} фото:\n"
+             f"{saved_files_text}",
         reply_markup=keyboards.get_kb_sku().as_markup()
     )
 # =================================================================================================

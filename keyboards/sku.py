@@ -1,4 +1,5 @@
 # 📸 - https://emojis.wiki/ru/fotokamera-so-vspyshkoj/
+# 🎞️ - https://emojis.wiki/ru/kinokadry/
 # ⁉️ - https://emojis.wiki/ru/vosklicatelnyj-i-voprositelnyj-znaki-krasnogo-cveta/
 # ❓ - https://emojis.wiki/ru/voprositelnyj-znak-krasnogo-cveta/
 # 📝 - https://emojis.wiki/ru/pamyatka/
