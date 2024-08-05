@@ -273,7 +273,7 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
             file=photo_largest,
             destination=os.path.join(img_folder, photo_largest.name)
         )
-        saved_files_text += f"🎞️ {photo_largest.name} - разрешение: {photo_largest.width} x {photo_largest.height}\n"
+        saved_files_text += f"📸️ {photo_largest.name} - разрешение: {photo_largest.width} x {photo_largest.height}\n"
 
     await state.clear()
 
