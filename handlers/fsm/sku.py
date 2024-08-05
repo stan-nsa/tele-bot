@@ -120,12 +120,12 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
 
         await msg_cbq.message.edit_text(
             text=text,
-            reply_markup=keyboards.get_kb_sku_cancel()
+            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
         )
     else:
         await msg_cbq.answer(
             text=text,
-            reply_markup=keyboards.get_kb_sku_cancel()
+            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
         )
         await msg_cbq.delete()
 # =================================================================================================
@@ -146,12 +146,12 @@ async def handler_cmd_cancel(msg_cbq: types.Message | types.CallbackQuery, state
 
         await msg_cbq.message.edit_text(
             text=text,
-            reply_markup=keyboards.get_kb_sku_cancel_yes_no()
+            reply_markup=keyboards.get_kb_sku_cancel_yes_no().as_markup()
         )
     else:
         await msg_cbq.answer(
             text=text,
-            reply_markup=keyboards.get_kb_sku_cancel_yes_no()
+            reply_markup=keyboards.get_kb_sku_cancel_yes_no().as_markup()
         )
         await msg_cbq.delete()
 
@@ -172,7 +172,7 @@ async def handler_sku_cancel_yes(callback: types.CallbackQuery, state: FSMContex
 
     await message.edit_text(
         text=f"❌ 📦 Добавление товара{sku_data.get_name_text2()} отменено (удалено {num_photos} фото)!",
-        reply_markup=keyboards.get_kb_sku()
+        reply_markup=keyboards.get_kb_sku().as_markup()
     )
 
 
@@ -224,7 +224,7 @@ async def handler_sku_photo_add(callback: types.CallbackQuery, state: FSMContext
     await message.edit_text(
         text=f"Артикул товара: {sku_data.get_name_text()}.\n\n"
              f"📸 Сфотографируйте товар:",
-        reply_markup=keyboards.get_kb_sku_save_cancel()
+        reply_markup=keyboards.get_kb_sku_save_cancel().as_markup()
     )
 
 
@@ -283,7 +283,7 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
 
     await msg_cbq.answer(
         text=f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен (сохранено {len(sku_data.photos)} фото)!",
-        reply_markup=keyboards.get_kb_sku()
+        reply_markup=keyboards.get_kb_sku().as_markup()
     )
 # =================================================================================================
 
@@ -299,7 +299,7 @@ async def handler_state_name(message: types.Message, state: FSMContext):
     await message.reply(
         text=f"Вы ввели артикул товара: {sku_data.get_name_text()}.\n\n"
              f"⁉️ Всё верно?",
-        reply_markup=keyboards.get_kb_sku_name()
+        reply_markup=keyboards.get_kb_sku_name().as_markup()
     )
 # =================================================================================================
 
@@ -310,7 +310,7 @@ async def handler_state_name_not_text(message: types.Message):
     await message.reply(
         text=f"Это не артикул!\n\n"
              f"📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_cancel()
+        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
     )
 # =================================================================================================
 
@@ -327,7 +327,7 @@ async def handler_sku_photos(message: types.Message, state: FSMContext):
 
     await message.reply(
         text=f"✅ 📸 Фото для товара{sku_data.get_name_text2()} получено!",
-        reply_markup=keyboards.get_kb_sku_photo()
+        reply_markup=keyboards.get_kb_sku_photo().as_markup()
     )
 # =================================================================================================
 
@@ -338,6 +338,6 @@ async def handler_sku_photos_not_photo(message: types.Message):
     await message.reply(
         text=f"Это не фото!\n\n"
              f"📸 Сфотографируйте товар:",
-        reply_markup=keyboards.get_kb_sku_save_cancel()
+        reply_markup=keyboards.get_kb_sku_save_cancel().as_markup()
     )
 # =================================================================================================

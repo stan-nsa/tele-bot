@@ -1,5 +1,6 @@
 # 📸 - https://emojis.wiki/ru/fotokamera-so-vspyshkoj/
 # ⁉️ - https://emojis.wiki/ru/vosklicatelnyj-i-voprositelnyj-znaki-krasnogo-cveta/
+# ❓ - https://emojis.wiki/ru/voprositelnyj-znak-krasnogo-cveta/
 # 📝 - https://emojis.wiki/ru/pamyatka/
 # ✅ - https://emojis.wiki/ru/zelenaya-galochka/
 # ✔️ - https://emojis.wiki/ru/galochka/
@@ -37,7 +38,7 @@ def get_kb_sku_builder(buttons: list[str], adjust: list[int] | int = 1):
         elif type(adjust) is int:
             kb.adjust(adjust)
 
-    return kb.as_markup()
+    return kb
 
 
 def get_kb_sku():
@@ -52,7 +53,7 @@ def get_kb_sku_name():
         sku_kb_buttons.get('cancel'),
     )
     kb.adjust(1)
-    return kb.as_markup()
+    return kb
 
 
 def get_kb_sku_cancel():
