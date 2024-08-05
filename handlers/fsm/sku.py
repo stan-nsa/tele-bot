@@ -251,7 +251,7 @@ async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMCont
                     'save',
                     'cancel',
                 ]
-            ),
+            ).as_markup(),
         )
 # =================================================================================================
 
