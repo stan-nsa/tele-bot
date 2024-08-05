@@ -4,14 +4,12 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.fsm.context import FSMContext
 
+import config
 import keyboards
 
 router = Router(name=__name__)
 
-IMG_FOLDER = 'd:/Projects/tele-bot/img'
-IMG_FILE_NAME_TEMPLATE = '%s-%d_%dx%d.jpg'
-# IMG_FILE_NAME_TEMPLATE = '%s-%d.jpg'
-img_folder = os.path.abspath(IMG_FOLDER)
+img_folder = os.path.abspath(config.IMG_FOLDER)
 
 
 # Состояния для загрузки информации по товару
@@ -267,8 +265,9 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
 
     for i, photo in enumerate(sku_data.photos.values(), start=1):
         photo_largest = photo.sizes[-1]
-        photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i, photo_largest.width, photo_largest.height)
-        # photo_largest.name = IMG_FILE_NAME_TEMPLATE % (sku_data.name, i)
+        photo_largest.name = config.IMG_FILE_NAME_TEMPLATE % (
+            sku_data.name, i, photo_largest.width, photo_largest.height)
+        # photo_largest.name = config.IMG_FILE_NAME_TEMPLATE % (sku_data.name, i)
         await msg_cbq.bot.download(
             file=photo_largest,
             destination=os.path.join(img_folder, photo_largest.name)

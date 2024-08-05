@@ -1,7 +1,6 @@
 import asyncio
 import logging
 # import sys
-from environs import Env
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -12,15 +11,14 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from handlers import router as handlers_router
 from handlers.commands.commands_menu import commands_menu
 
-env = Env()
-env.read_env()
+import config
 
 
 async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
 
-    bot = Bot(token=env('BOT_TOKEN'),
+    bot = Bot(token=config.BOT_TOKEN,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     # Прописываем меню команд для всех
     await bot.set_my_commands(commands_menu, BotCommandScopeDefault())
