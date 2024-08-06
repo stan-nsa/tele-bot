@@ -9,4 +9,4 @@ IMG_FOLDER = env('IMG_FOLDER')
 
 IMG_FILE_NAME_TEMPLATE = env('IMG_FILE_NAME_TEMPLATE')
 
-# inline
+# inline 2
