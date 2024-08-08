@@ -70,3 +70,7 @@ def get_kb_sku_save_cancel():
 
 def get_kb_sku_cancel_yes_no():
     return get_kb_yes_no(prefix="sku_cancel_")
+
+
+def get_kb_sku_delete_yes_no():
+    return get_kb_yes_no(prefix="sku_delete_")
