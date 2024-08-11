@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from aiogram import Router, types, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.state import State, StatesGroup, default_state
@@ -9,21 +9,21 @@ import keyboards
 
 router = Router(name=__name__)
 
-img_folder = os.path.abspath(config.IMG_FOLDER)
+img_folder = Path(config.IMG_FOLDER)
 
 
 # Состояния для загрузки информации по товару
 class FSMSku(StatesGroup):
-    name = State()      # Состояние для ввода артикула товара
-    photos = State()    # Состояние для загрузки фото товара
-    delete = State()    # Состояние для удаления товара
+    name = State()  # Состояние для ввода артикула товара
+    photos = State()  # Состояние для загрузки фото товара
+    delete = State()  # Состояние для удаления товара
 
 
 # Класс описывающий структуру данных размера фото товара
 class SkuPhotoSize:
-    file_id: str    # Идентификатор файла
-    width: int      # Ширина фото в пикселях
-    height: int     # Высота фото в пикселях
+    file_id: str  # Идентификатор файла
+    width: int  # Ширина фото в пикселях
+    height: int  # Высота фото в пикселях
 
     # Конструктор класса
     def __init__(self,
@@ -40,17 +40,18 @@ class SkuPhotoSize:
 
 
 # Класс описывающий структуру данных фото товара
-class SkuPhoto:
-    name: str                       # Имя файла
-    chat_id: int                    # Идентификатор чата
-    message_id: int                 # Идентификатор сообщения, содержащего фото
-    sizes: list[SkuPhotoSize]       # Список размеров фотографии товара
+class SkuPhoto(SkuPhotoSize):
+    name: str  # Имя файла
+    chat_id: int  # Идентификатор чата
+    message_id: int  # Идентификатор сообщения, содержащего фото
+    sizes: list[SkuPhotoSize]  # Список размеров фотографии товара
 
     # Конструктор класса
     def __init__(self,
                  message: types.Message = None,
                  sizes: list[types.PhotoSize] = None,
                  chat_id: int = None, message_id: int = None, name: str = None):
+        super().__init__()
         self.name = name
         self.sizes = list[SkuPhotoSize]()
 
@@ -70,15 +71,24 @@ class SkuPhoto:
 
 # Класс описывающий структуру данных товара
 class SkuData:
-    id: str                     # Идентификатор
-    name: str                   # Артикул
-    photos: {int: SkuPhoto}     # Словарь фотографий товара dict(message_id=SkuPhoto)
+    id: str  # Идентификатор
+    name: str  # Артикул
+    photos: {int: SkuPhoto}  # Словарь фотографий товара dict(message_id=SkuPhoto)
+    store: Path  # Хранилище фотографий
+    chat: types.Chat  # Чат
 
     # Конструктор класса
-    def __init__(self, sku_id: str = None, name: str = None, photos: {int: SkuPhoto} = None):
+    def __init__(self,
+                 sku_id: str = None,
+                 name: str = None,
+                 photos: {int: SkuPhoto} = None,
+                 store: Path = None,
+                 chat: types.Chat = None):
         self.id = sku_id
         self.name = name
         self.photos = photos if photos is not None else dict()
+        self.store = store
+        self.chat = chat
 
     # Артикул жирным текстом
     def get_name_text(self):
@@ -91,20 +101,43 @@ class SkuData:
         return name_text
 
     # Удаление фото из чата
-    async def delete_photos_from_chat(self, chat: types.Chat = None):
-        if (not len(self.photos)) or (not chat):
-            return
-
-        await chat.bot.delete_messages(
-            chat.id,
-            [p.message_id for p in self.photos.values()]
-        )
-        self.photos.clear()
+    async def delete_photos_from_chat(self):
+        if len(self.photos):
+            await self.chat.bot.delete_messages(
+                self.chat.id,
+                [p.message_id for p in self.photos.values()]
+            )
+            self.photos.clear()
 
     # Удаление фото из хранилища
-    def delete_photos_from_store(self):
-        if len(self.photos):
+    def delete_photos_from_store(self) -> list[str]:
+        deleted_files = []
+
+        if len(self.name):
+            files = Path(self.store).glob(f"{self.name}*.jpg")
+            for file in files:
+                deleted_files.append(file.name)
+                file.unlink(missing_ok=True)
+
             self.photos.clear()
+
+        return deleted_files
+
+    # Сохранение фото в хранилище
+    async def save_photos_to_store(self):
+        for i, photo in enumerate(self.photos.values(), start=1):
+            photo_largest = photo.sizes[-1]  # Фото с наибольшим разрешением
+
+            photo.file_id = photo_largest.file_id
+            photo.width = photo_largest.width
+            photo.height = photo_largest.height
+            photo.name = config.IMG_FILE_NAME_TEMPLATE % (
+                self.name, i, photo_largest.width, photo_largest.height)
+            # photo.name = config.IMG_FILE_NAME_TEMPLATE % (self.name, i)
+            await self.chat.bot.download(
+                file=photo.file_id,
+                destination=self.store.joinpath(photo.name)
+            )
 
 
 # == Добавление товара ============================================================================
@@ -114,25 +147,25 @@ class SkuData:
 async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     await state.set_state(FSMSku.name)
 
-    data = dict(sku_data=SkuData())
+    if type(msg_cbq) is types.CallbackQuery:
+        func_answer = msg_cbq.message.edit_text
+        chat = msg_cbq.message.chat
+
+        await msg_cbq.answer()
+    else:
+        func_answer = msg_cbq.answer
+        chat = msg_cbq.chat
+
+        await msg_cbq.delete()
+
+    data = dict(sku_data=SkuData(store=img_folder, chat=chat))
     await state.set_data(data)
 
-    text = "Начинаем добавлять товар.\n\n" \
-           "📝 Введите артикул товара:"
-
-    if type(msg_cbq) is types.CallbackQuery:
-        await msg_cbq.answer()
-
-        await msg_cbq.message.edit_text(
-            text=text,
-            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
-        )
-    else:
-        await msg_cbq.answer(
-            text=text,
-            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
-        )
-        await msg_cbq.delete()
+    await func_answer(
+        text="Начинаем добавлять товар.\n\n"
+             "📝 Введите артикул товара:",
+        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
+    )
 # =================================================================================================
 
 
@@ -190,7 +223,7 @@ async def handler_sku_cancel_yes(callback: types.CallbackQuery, state: FSMContex
     sku_data = data['sku_data']
     num_photos = len(sku_data.photos)
 
-    await sku_data.delete_photos_from_chat(chat=message.chat)
+    await sku_data.delete_photos_from_chat()
 
     await state.clear()
 
@@ -298,17 +331,11 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
     data = await state.get_data()
     sku_data = data['sku_data']
 
+    await sku_data.save_photos_to_store()
+
     saved_files_text = ''
-    for i, photo in enumerate(sku_data.photos.values(), start=1):
-        photo_largest = photo.sizes[-1]
-        photo_largest.name = config.IMG_FILE_NAME_TEMPLATE % (
-            sku_data.name, i, photo_largest.width, photo_largest.height)
-        # photo_largest.name = config.IMG_FILE_NAME_TEMPLATE % (sku_data.name, i)
-        await msg_cbq.bot.download(
-            file=photo_largest,
-            destination=os.path.join(img_folder, photo_largest.name)
-        )
-        saved_files_text += f"📸️ {photo_largest.name} - разрешение: {photo_largest.width} x {photo_largest.height}\n"
+    for photo in sku_data.photos.values():
+        saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
 
     await state.clear()
 
@@ -333,25 +360,25 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
 async def handler_sku_delete(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     await state.set_state(FSMSku.delete)
 
-    data = dict(sku_data=SkuData())
+    if type(msg_cbq) is types.CallbackQuery:
+        func_answer = msg_cbq.message.answer
+        chat = msg_cbq.message.chat
+
+        await msg_cbq.answer()
+    else:
+        func_answer = msg_cbq.answer
+        chat = msg_cbq.chat
+
+        await msg_cbq.delete()
+
+    data = dict(sku_data=SkuData(store=img_folder, chat=chat))
     await state.set_data(data)
 
-    text = "🗑️ Начинаем удалять товар.\n\n" \
-           "📝 Введите артикул товара:"
-
-    if type(msg_cbq) is types.CallbackQuery:
-        await msg_cbq.answer()
-
-        await msg_cbq.message.answer(
-            text=text,
-            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
-        )
-    else:
-        await msg_cbq.answer(
-            text=text,
-            reply_markup=keyboards.get_kb_sku_cancel().as_markup()
-        )
-        await msg_cbq.delete()
+    await func_answer(
+        text="🗑️ Начинаем удалять товар.\n\n"
+             "📝 Введите артикул товара:",
+        reply_markup=keyboards.get_kb_sku_delete_cancel().as_markup()
+    )
 
 
 # Обработчик состояния для ввода артикула удаляемого товара
@@ -374,7 +401,7 @@ async def handler_state_delete_not_text(message: types.Message):
     await message.reply(
         text=f"Это не артикул!\n\n"
              f"📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_delete_cancel().as_markup()
     )
 
 
@@ -386,22 +413,32 @@ async def handler_sku_delete_yes(callback: types.CallbackQuery, state: FSMContex
     message = callback.message
     data = await state.get_data()
     sku_data = data['sku_data']
-    num_photos = len(sku_data.photos)
 
-    sku_data.delete_photos_from_store()
+    deleted_files = sku_data.delete_photos_from_store()
+    deleted_files_text = "\n".join(deleted_files)
+
+    if len(deleted_files):
+        text = f"❌ 📦 Товар{sku_data.get_name_text2()} удален!\n\n" \
+               f" Удалено {len(deleted_files)} фото:\n" \
+               f"{deleted_files_text}"
+    else:
+        text = f"⚠️ 📦 Товар{sku_data.get_name_text2()} не найден!\n"
 
     await state.clear()
 
     await message.edit_text(
-        text=f"❌ 📦 Товар{sku_data.get_name_text2()} удален (удалено {num_photos} фото)!",
+        text=text,
         reply_markup=keyboards.get_kb_sku().as_markup()
     )
 
 
 # Обработчик кнопки "Нет" для отмены удаления товара
 @router.callback_query(F.data == "sku_delete_btn_no", ~StateFilter(default_state))
-async def handler_sku_delete_no(callback: types.CallbackQuery):
+@router.callback_query(F.data == "sku_delete_cancel", ~StateFilter(default_state))
+async def handler_sku_delete_no(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
+
+    await state.clear()
 
     await callback.message.delete()
 # =================================================================================================
