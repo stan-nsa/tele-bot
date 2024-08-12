@@ -73,7 +73,7 @@ class SkuPhoto(SkuPhotoSize):
 class SkuData:
     id: str  # Идентификатор
     name: str  # Артикул
-    photos: {int: SkuPhoto}  # Словарь фотографий товара dict(message_id=SkuPhoto)
+    photos: dict[int: SkuPhoto]  # Словарь фотографий товара dict(message_id=SkuPhoto)
     store: Path  # Хранилище фотографий
     chat: types.Chat  # Чат
 
@@ -81,7 +81,7 @@ class SkuData:
     def __init__(self,
                  sku_id: str = None,
                  name: str = None,
-                 photos: {int: SkuPhoto} = None,
+                 photos: dict[int: SkuPhoto] = None,
                  store: Path = None,
                  chat: types.Chat = None):
         self.id = sku_id
