@@ -11,12 +11,16 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from handlers import router as handlers_router
 from handlers.commands.commands_menu import commands_menu
 
+from middlewares import UserMiddleware
+
 import config
 
 
 async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
+
+    dp.update.outer_middleware(middleware=UserMiddleware())
 
     bot = Bot(token=config.BOT_TOKEN,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -25,7 +29,7 @@ async def main():
     # Удаляем неполученные/необработанные обновления/сообщения
     await bot.delete_webhook(drop_pending_updates=True)
 
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
 if __name__ == '__main__':
