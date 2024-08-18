@@ -127,6 +127,12 @@ class SkuData:
     async def save_photos_to_store(self):
         for i, photo in enumerate(self.photos.values(), start=1):
             photo_largest = photo.sizes[-1]  # Фото с наибольшим разрешением
+            for photo_size in photo.sizes:
+                # Поиск фото нужного разрешения
+                if (photo_size.width <= config.IMG_RESOLUTION) and (photo_size.height <= config.IMG_RESOLUTION):
+                    photo_largest = photo_size
+                else:
+                    break
 
             photo.file_id = photo_largest.file_id
             photo.width = photo_largest.width
