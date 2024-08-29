@@ -4,12 +4,12 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.fsm.context import FSMContext
 
-import config
+from config import config
 import keyboards
 
 router = Router(name=__name__)
 
-img_folder = Path(config.IMG_FOLDER)
+img_folder = Path(config.img.folder)
 
 
 # Состояния для загрузки информации по товару
@@ -129,7 +129,7 @@ class SkuData:
             photo_largest = photo.sizes[-1]  # Фото с наибольшим разрешением
             for photo_size in photo.sizes:
                 # Поиск фото нужного разрешения
-                if (photo_size.width <= config.IMG_RESOLUTION) and (photo_size.height <= config.IMG_RESOLUTION):
+                if (photo_size.width <= config.img.resolution) and (photo_size.height <= config.img.resolution):
                     photo_largest = photo_size
                 else:
                     break
@@ -137,9 +137,9 @@ class SkuData:
             photo.file_id = photo_largest.file_id
             photo.width = photo_largest.width
             photo.height = photo_largest.height
-            photo.name = config.IMG_FILE_NAME_TEMPLATE % (
+            photo.name = config.img.file_name_template % (
                 self.name, i, photo_largest.width, photo_largest.height)
-            # photo.name = config.IMG_FILE_NAME_TEMPLATE % (self.name, i)
+            # photo.name = config.img.file_name_template % (self.name, i)
             await self.chat.bot.download(
                 file=photo.file_id,
                 destination=self.store.joinpath(photo.name)

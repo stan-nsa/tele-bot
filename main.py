@@ -13,7 +13,7 @@ from handlers.commands.commands_menu import commands_menu
 
 from middlewares import UserMiddleware
 
-import config
+from config import config
 
 
 async def main():
@@ -22,7 +22,7 @@ async def main():
 
     dp.update.outer_middleware(middleware=UserMiddleware())
 
-    bot = Bot(token=config.BOT_TOKEN,
+    bot = Bot(token=config.bot.token,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     # Прописываем меню команд для всех
     await bot.set_my_commands(commands_menu, BotCommandScopeDefault())
