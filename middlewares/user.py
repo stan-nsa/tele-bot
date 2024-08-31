@@ -4,6 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from config import config
+from db.query import get_user
 
 
 class UserMiddleware(BaseMiddleware):
@@ -13,9 +14,7 @@ class UserMiddleware(BaseMiddleware):
                        data: Dict[str, Any]
                        ) -> Any:
 
-        # if ((not USERS) or (event.event.from_user.id in USERS)) or \
-        #         ((not ADMIN) or (event.event.from_user.id == ADMIN)):
-        if (not config.bot.users) or (event.event.from_user.id in config.bot.users):
+        if (event.event.from_user.id in config.bot.admins) or (await get_user(event.event.from_user)):
             result = await handler(event, data)
         else:
             result = None

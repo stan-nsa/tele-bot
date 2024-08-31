@@ -15,10 +15,23 @@ from middlewares import UserMiddleware
 
 from config import config
 
+from db.engine import create_db
+
+
+async def on_startup():
+    print('Start Tele-Bot')
+    await create_db()
+
+
+async def on_shutdown():
+    print('Stop Tele-Bot')
+
 
 async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_startup)
 
     dp.update.outer_middleware(middleware=UserMiddleware())
 

@@ -12,4 +12,4 @@ router.include_router(fsm_router)
 router.include_router(chat_router)
 
 # Эхо-роутер должен быть самым последним в списке подключения роутеров
-router.include_router(echo_router)
+# router.include_router(echo_router)

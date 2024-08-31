@@ -8,17 +8,17 @@ from environs import Env
 
 @dataclass
 class TgBot:
-    token: str            # Токен для доступа к телеграм-боту
-    admins: list[int]  # Список id администраторов бота
-    users: list[int]  # Список id администраторов бота
-    chats: list[int]  # Список id администраторов бота
+    token: str          # Токен для доступа к телеграм-боту
+    admins: list[int]   # Список id администраторов бота
+    users: list[int]    # Список id пользователей бота
+    chats: list[int]    # Список id чатов бота
 
 
 @dataclass
 class ImageConfig:
-    folder: str         # Название базы данных
-    file_name_template: str          # URL-адрес базы данных
-    resolution: int          # Username пользователя базы данных
+    folder: str              # Путь к директории для хранения фото
+    file_name_template: str  # Шаблон имени файла фото
+    resolution: int          # Разрешение фото: {1280, 800, 320, 90}
 
 
 @dataclass
