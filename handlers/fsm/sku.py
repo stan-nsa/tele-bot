@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 from config import config
 import keyboards
+from db.query import add_log
 
 router = Router(name=__name__)
 
@@ -350,12 +351,15 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
         await msg_cbq.message.delete_reply_markup()
         msg_cbq = msg_cbq.message
 
+    text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
+           f"Сохранено {len(sku_data.photos)} фото:\n" \
+           f"{saved_files_text}"
     await msg_cbq.answer(
-        text=f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n"
-             f"Сохранено {len(sku_data.photos)} фото:\n"
-             f"{saved_files_text}",
+        text=text,
         reply_markup=keyboards.get_kb_sku().as_markup()
     )
+
+    await add_log(msg_cbq.from_user.id, sku_data.name, 'save', text)
 # =================================================================================================
 
 
