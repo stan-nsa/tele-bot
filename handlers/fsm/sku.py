@@ -278,6 +278,42 @@ async def handler_state_name_not_text(message: types.Message):
 # =================================================================================================
 
 
+# == Сохранение товара ============================================================================
+# Обработчик комады /save и кнопки "Завершить добавление товара"
+# для завершения машины состояний добавления товара и сохранения фото товара
+@router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
+@router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
+async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
+    from_user_id = msg_cbq.from_user.id
+
+    data = await state.get_data()
+    sku_data = data['sku_data']
+
+    await sku_data.save_photos_to_store()
+
+    saved_files_text = ''
+    for photo in sku_data.photos.values():
+        saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
+
+    await state.clear()
+
+    if type(msg_cbq) is types.CallbackQuery:
+        await msg_cbq.answer()
+        await msg_cbq.message.delete_reply_markup()
+        msg_cbq = msg_cbq.message
+
+    text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
+           f"Сохранено {len(sku_data.photos)} фото:\n" \
+           f"{saved_files_text}"
+    await msg_cbq.answer(
+        text=text,
+        reply_markup=keyboards.get_kb_sku().as_markup()
+    )
+
+    await add_log(from_user_id, sku_data.name, 'save', text)
+# =================================================================================================
+
+
 # == Фото товара ==================================================================================
 # Обработчик состояния для добавдения фото товара
 @router.message(StateFilter(FSMSku.photos), F.photo)
@@ -326,40 +362,6 @@ async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMCont
                  f"📸 Сфотографируйте товар!",
             reply_markup=keyboards.get_kb_sku_save_cancel().as_markup()
         )
-# =================================================================================================
-
-
-# == Сохранение товара ============================================================================
-# Обработчик комады /save и кнопки "Завершить добавление товара"
-# для завершения машины состояний добавления товара и сохранения фото товара
-@router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
-@router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
-async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    sku_data = data['sku_data']
-
-    await sku_data.save_photos_to_store()
-
-    saved_files_text = ''
-    for photo in sku_data.photos.values():
-        saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
-
-    await state.clear()
-
-    if type(msg_cbq) is types.CallbackQuery:
-        await msg_cbq.answer()
-        await msg_cbq.message.delete_reply_markup()
-        msg_cbq = msg_cbq.message
-
-    text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
-           f"Сохранено {len(sku_data.photos)} фото:\n" \
-           f"{saved_files_text}"
-    await msg_cbq.answer(
-        text=text,
-        reply_markup=keyboards.get_kb_sku().as_markup()
-    )
-
-    await add_log(msg_cbq.from_user.id, sku_data.name, 'save', text)
 # =================================================================================================
 
 
@@ -431,6 +433,7 @@ async def handler_sku_delete_yes(callback: types.CallbackQuery, state: FSMContex
         text = f"❌ 📦 Товар{sku_data.get_name_text2()} удален!\n\n" \
                f" Удалено {len(deleted_files)} фото:\n" \
                f"{deleted_files_text}"
+        await add_log(callback.from_user.id, sku_data.name, 'delete', text)
     else:
         text = f"⚠️ 📦 Товар{sku_data.get_name_text2()} не найден!\n"
 
