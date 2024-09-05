@@ -49,7 +49,7 @@ config = Config(
         chats=env.list('CHATS', subcast=int, default=[])),
     img=ImageConfig(
         folder=env('IMG_FOLDER', default='.'),
-        file_name_template=env('IMG_FILE_NAME_TEMPLATE', default='%s-%d.jpg'),
+        file_name_template=env('IMG_FILE_NAME_TEMPLATE', default='%s_%d.jpg'),
         resolution=env.int('IMG_RESOLUTION', default=1280)),
     db=DatabaseConfig(
         database=env('DATABASE', default=''),

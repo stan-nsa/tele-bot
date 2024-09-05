@@ -92,14 +92,31 @@ class SkuData:
         self.chat = chat
 
     # Артикул жирным текстом
-    def get_name_text(self):
+    def get_name_text(self) -> str:
         name_text = f"<b>{self.name}</b>" if self.name and len(self.name) else ''
         return name_text
 
     # Часть текста с артикулом жирным текстом
-    def get_name_text2(self):
+    def get_name_text2(self) -> str:
         name_text = f" с артикулом: {self.get_name_text()}" if self.name and len(self.name) else ''
         return name_text
+
+    # Список файлов фото в хранилище
+    def get_files_in_store(self) -> list[Path]:
+        files = []
+        if len(self.name):
+            files = sorted(Path(self.store).glob(f"{self.name}*.jpg"))
+
+        return files
+
+    # Максимальный индекс/номер файла в хранилище
+    def get_max_files_index(self) -> int:
+        files = self.get_files_in_store()
+        idx = 0
+        if files:
+            idx = int(files[-1].stem.split('_')[1])
+
+        return idx
 
     # Удаление фото из чата
     async def delete_photos_from_chat(self):
@@ -115,7 +132,7 @@ class SkuData:
         deleted_files = []
 
         if len(self.name):
-            files = Path(self.store).glob(f"{self.name}*.jpg")
+            files = self.get_files_in_store()
             for file in files:
                 deleted_files.append(file.name)
                 file.unlink(missing_ok=True)
@@ -126,7 +143,10 @@ class SkuData:
 
     # Сохранение фото в хранилище
     async def save_photos_to_store(self):
-        for i, photo in enumerate(self.photos.values(), start=1):
+        idx = self.get_max_files_index()
+
+        for photo in self.photos.values():
+            idx += 1
             photo_largest = photo.sizes[-1]  # Фото с наибольшим разрешением
             for photo_size in photo.sizes:
                 # Поиск фото нужного разрешения
@@ -139,8 +159,8 @@ class SkuData:
             photo.width = photo_largest.width
             photo.height = photo_largest.height
             photo.name = config.img.file_name_template % (
-                self.name, i, photo_largest.width, photo_largest.height)
-            # photo.name = config.img.file_name_template % (self.name, i)
+                self.name, idx, photo_largest.width, photo_largest.height)
+            # photo.name = config.img.file_name_template % (self.name, idx)
             await self.chat.bot.download(
                 file=photo.file_id,
                 destination=self.store.joinpath(photo.name)
