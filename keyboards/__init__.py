@@ -11,4 +11,5 @@ from .sku import (
 from .others import (
     get_kb_yes_no,
     get_kb_help,
+    get_kb_goto_bot,
 )

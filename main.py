@@ -5,7 +5,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import BotCommandScopeDefault
+from aiogram.types import BotCommandScopeDefault, BotCommandScopeAllPrivateChats
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from handlers import router as handlers_router
@@ -37,8 +37,10 @@ async def main():
 
     bot = Bot(token=config.bot.token,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    # Прописываем меню команд для всех
-    await bot.set_my_commands(commands_menu, BotCommandScopeDefault())
+    # Удаляем меню команд в групповых чатах
+    await bot.delete_my_commands(scope=BotCommandScopeDefault())
+    # Прописываем меню команд для приватного чата с ботом
+    await bot.set_my_commands(commands=commands_menu, scope=BotCommandScopeAllPrivateChats())
     # Удаляем неполученные/необработанные обновления/сообщения
     await bot.delete_webhook(drop_pending_updates=True)
 

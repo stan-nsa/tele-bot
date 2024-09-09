@@ -32,3 +32,11 @@ def get_kb_help():
         InlineKeyboardButton(text="❓ Помощь", callback_data="help"),
     )
     return kb
+
+
+def get_kb_goto_bot():
+    kb = InlineKeyboardBuilder()
+    kb.add(
+        InlineKeyboardButton(text="👉 Перейти к боту", url='https://t.me/nsa_tele_bot'),
+    )
+    return kb

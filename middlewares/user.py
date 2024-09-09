@@ -14,7 +14,8 @@ class UserMiddleware(BaseMiddleware):
                        data: Dict[str, Any]
                        ) -> Any:
 
-        if (event.event.from_user.id in config.bot.admins) or (await get_user(event.event.from_user)):
+        # if (event.event.chat.type == 'private') and (
+        if (event.event.from_user.id in config.bot.admins) or (await get_user(event.event.from_user, 'member')):
             result = await handler(event, data)
         else:
             result = None
