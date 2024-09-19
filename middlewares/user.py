@@ -13,8 +13,6 @@ class UserMiddleware(BaseMiddleware):
                        event: TelegramObject,
                        data: Dict[str, Any]
                        ) -> Any:
-
-        # if (event.event.chat.type == 'private') and (
         if (event.event.from_user.id in config.bot.admins) or (await get_user(event.event.from_user, 'member')):
             result = await handler(event, data)
         else:

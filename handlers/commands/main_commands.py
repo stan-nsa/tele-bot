@@ -4,6 +4,9 @@ import keyboards
 from help import help_text
 
 router = Router(name=__name__)
+# Роутер только для лички (фильтры уже прописаны в /handlers/__init__.py)
+# router.message.filter(F.chat.type == 'private')
+# router.callback_query.filter(F.chat.type == 'private')
 
 
 # == Обработчик команды /start ====================================================================

@@ -2,7 +2,7 @@ import asyncio
 import logging
 # import sys
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommandScopeDefault, BotCommandScopeAllPrivateChats
@@ -30,6 +30,10 @@ async def on_shutdown():
 async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
+    # Фильтры для всех подключенных роутеров!!!)
+    dp.message.filter(F.chat.type == 'private')
+    dp.callback_query.filter(F.message.chat.type == 'private')
+
     dp.startup.register(on_startup)
     dp.shutdown.register(on_startup)
 
