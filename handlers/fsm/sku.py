@@ -8,6 +8,7 @@ from config import config
 import keyboards
 from db.query import add_log
 
+
 router = Router(name=__name__)
 
 img_folder = Path(config.img.folder)
@@ -304,8 +305,6 @@ async def handler_state_name_not_text(message: types.Message):
 @router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
 @router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
 async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
-    from_user_id = msg_cbq.from_user.id
-
     data = await state.get_data()
     sku_data = data['sku_data']
 
@@ -316,6 +315,8 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
         saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
 
     await state.clear()
+
+    from_user = msg_cbq.from_user
 
     if type(msg_cbq) is types.CallbackQuery:
         await msg_cbq.answer()
@@ -330,7 +331,13 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
         reply_markup=keyboards.get_kb_sku().as_markup()
     )
 
-    await add_log(from_user_id, sku_data.name, 'save', text)
+    await add_log(
+        user_id=from_user.id,
+        user_name=from_user.full_name,
+        sku=sku_data.name,
+        action='save',
+        description=text
+    )
 # =================================================================================================
 
 
@@ -453,7 +460,13 @@ async def handler_sku_delete_yes(callback: types.CallbackQuery, state: FSMContex
         text = f"❌ 📦 Товар{sku_data.get_name_text2()} удален!\n\n" \
                f" Удалено {len(deleted_files)} фото:\n" \
                f"{deleted_files_text}"
-        await add_log(callback.from_user.id, sku_data.name, 'delete', text)
+        await add_log(
+            user_id=callback.from_user.id,
+            user_name=callback.from_user.full_name,
+            sku=sku_data.name,
+            action='delete',
+            description=text
+        )
     else:
         text = f"⚠️ 📦 Товар{sku_data.get_name_text2()} не найден!\n"
 

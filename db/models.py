@@ -13,7 +13,8 @@ class User(Base):
     first_name: Mapped[str] = mapped_column(String(150), nullable=True)
     last_name: Mapped[str] = mapped_column(String(150), nullable=True)
     username: Mapped[str] = mapped_column(String(150), nullable=True)
-    status: Mapped[str] = mapped_column(String(10))
+    full_name: Mapped[str] = mapped_column(String(150), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))
     date_time: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
 
@@ -22,6 +23,7 @@ class SkuLog(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id = mapped_column(BigInteger, ForeignKey('users.id'), index=True)
+    user_name: Mapped[str] = mapped_column(String(50))
     sku: Mapped[str] = mapped_column(String(50))
     action: Mapped[str] = mapped_column(String(10))
     description: Mapped[str] = mapped_column(Text)

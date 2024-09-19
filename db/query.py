@@ -11,7 +11,7 @@ async def get_user(tg_user: Tg_User, status: str = None):
         query = select(User).where(User.id == tg_user.id)
 
         if status:
-            query.where(User.status == status)
+            query = query.where(User.status == status)
 
         user = await session.scalar(query)
 
@@ -27,9 +27,19 @@ async def delete_user(tg_user: Tg_User):
 
 # Удалить юзера в базе по telegram-id
 async def update_user(tg_user: Tg_User, status: str = 'member'):
-    async with db_session() as session:
-        await session.execute(update(User).where(User.id == tg_user.id).values({'status': status}))
-        await session.commit()
+    if await get_user(tg_user=tg_user):
+        async with db_session() as session:
+            update_values = {
+                'first_name': tg_user.first_name,
+                'last_name': tg_user.last_name,
+                'username': tg_user.username,
+                'full_name': tg_user.full_name,
+                'status': status,
+            }
+            await session.execute(update(User).where(User.id == tg_user.id).values(update_values))
+            await session.commit()
+    else:
+        await add_user(tg_user=tg_user)
 
 
 # Удалить юзера в базу
@@ -40,6 +50,7 @@ async def add_user(tg_user: Tg_User):
             first_name=tg_user.first_name,
             last_name=tg_user.last_name,
             username=tg_user.username,
+            full_name=tg_user.full_name,
             status='member'
         )
         session.add(user)
@@ -47,10 +58,11 @@ async def add_user(tg_user: Tg_User):
 
 
 # Удалить лог действия в базу
-async def add_log(user_id, sku, action, description):
+async def add_log(user_id, user_name, sku, action, description):
     async with db_session() as session:
         event = SkuLog(
             user_id=user_id,
+            user_name=user_name,
             sku=sku,
             action=action,
             description=description
