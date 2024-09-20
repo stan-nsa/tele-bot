@@ -15,10 +15,11 @@
 # ⚠️ - https://emojis.wiki/ru/preduprezhdenie/
 
 
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardButton, KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from .others import get_kb_yes_no
 
+# == InlineKeyboar ================================================================================
 sku_kb_buttons = dict(
     add=InlineKeyboardButton(text="📦 Добавить товар", callback_data="sku_add"),
     cancel=InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
@@ -80,3 +81,13 @@ def get_kb_sku_delete_cancel():
 
 def get_kb_sku_delete_yes_no():
     return get_kb_yes_no(prefix="sku_delete_")
+
+
+# == ReplyKeyboard ================================================================================
+def get_kb_sku_fsm():
+    kb = ReplyKeyboardBuilder()
+    kb.row(
+        KeyboardButton(text='Завершить'),
+        KeyboardButton(text='Отменить')
+    )
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)

@@ -1,6 +1,6 @@
 from pathlib import Path
 from aiogram import Router, types, F
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.fsm.context import FSMContext
 
@@ -195,14 +195,14 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
     await func_answer(
         text="Начинаем добавлять товар.\n\n"
              "📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_fsm()  # get_kb_sku_cancel().as_markup()
     )
 # =================================================================================================
 
 
 # == Отмена добавления товара =====================================================================
 # Обработчик комады /cancel для остановки машины состояний добавления товара
-@router.message(Command('cancel', ignore_case=True), ~StateFilter(default_state))
+@router.message(or_f(Command('cancel', ignore_case=True), F.text.lower() == "отменить"), ~StateFilter(default_state))
 async def handler_cmd_cancel(message: types.Message, state: FSMContext):
     if await state.get_state() == FSMSku.name:
         await state.clear()
@@ -305,7 +305,7 @@ async def handler_state_name_not_text(message: types.Message):
 # == Сохранение товара ============================================================================
 # Обработчик комады /save и кнопки "Завершить добавление товара"
 # для завершения машины состояний добавления товара и сохранения фото товара
-@router.message(Command('save', ignore_case=True), StateFilter(FSMSku.photos))
+@router.message(or_f(Command('save', ignore_case=True), F.text.lower() == "сохранить"), StateFilter(FSMSku.photos))
 @router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
 async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
