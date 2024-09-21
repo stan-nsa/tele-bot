@@ -87,7 +87,7 @@ def get_kb_sku_delete_yes_no():
 def get_kb_sku_fsm():
     kb = ReplyKeyboardBuilder()
     kb.row(
-        KeyboardButton(text='Завершить'),
-        KeyboardButton(text='Отменить')
+        KeyboardButton(text='📦 Завершить'),
+        KeyboardButton(text='❌ Отменить')
     )
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)

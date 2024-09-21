@@ -202,7 +202,10 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
 
 # == Отмена добавления товара =====================================================================
 # Обработчик комады /cancel для остановки машины состояний добавления товара
-@router.message(or_f(Command('cancel', ignore_case=True), F.text.lower() == "отменить"), ~StateFilter(default_state))
+@router.message(
+    or_f(Command('cancel', ignore_case=True), F.text.lower().contains('отменить')),
+    ~StateFilter(default_state)
+)
 async def handler_cmd_cancel(message: types.Message, state: FSMContext):
     if await state.get_state() == FSMSku.name:
         await state.clear()
