@@ -173,7 +173,10 @@ class SkuData:
 
 # == Добавление товара ============================================================================
 # Обработчик комады /add и кнопки "Добавить товар" для запуска машины состояний для добавления товара
-@router.message(Command('add', ignore_case=True), StateFilter(default_state))
+@router.message(
+    or_f(Command('add', ignore_case=True), F.text.lower().contains('добавить')),
+    StateFilter(default_state)
+)
 @router.callback_query(F.data == "sku_add", StateFilter(default_state))
 async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
     await state.set_state(FSMSku.name)
@@ -195,7 +198,8 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
     await func_answer(
         text="Начинаем добавлять товар.\n\n"
              "📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_fsm()  # get_kb_sku_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder='Введите артикул товара')
+        # reply_markup = keyboards.get_kb_sku_cancel().as_markup()
     )
 # =================================================================================================
 
@@ -212,7 +216,8 @@ async def handler_cmd_cancel(message: types.Message, state: FSMContext):
 
         await message.answer(
             text=f"❌ 📦 Добавление товара отменено!",
-            reply_markup=keyboards.get_kb_sku().as_markup()
+            reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder='Введите артикул товара')
+            # reply_markup = keyboards.get_kb_sku().as_markup()
         )
     else:
         data = await state.get_data()
@@ -263,14 +268,15 @@ async def handler_sku_cancel_yes(callback: types.CallbackQuery, state: FSMContex
 
     await message.edit_text(
         text=f"❌ 📦 Добавление товара{sku_data.get_name_text2()} отменено (удалено {num_photos} фото)!",
-        reply_markup=keyboards.get_kb_sku().as_markup()
+        reply_markup=keyboards.get_kb_sku_start()
+        # reply_markup = keyboards.get_kb_sku().as_markup()
     )
 
 
 # Обработчик кнопки "Нет" для отмены остановки машины состояний добавления товара
 @router.callback_query(F.data == "sku_cancel_btn_no", ~StateFilter(default_state))
 async def handler_sku_cancel_no(callback: types.CallbackQuery):
-    await callback.answer()
+    await callback.answer(reply_markup=keyboards.get_kb_sku_fsm())
 
     await callback.message.delete()
 # =================================================================================================

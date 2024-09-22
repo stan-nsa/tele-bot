@@ -1,5 +1,5 @@
 from aiogram import Router, types, F
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, or_f
 import keyboards
 from help import help_text
 
@@ -10,7 +10,11 @@ router = Router(name=__name__)
 
 
 # == Обработчик команды /start ====================================================================
-@router.message(CommandStart(ignore_case=True))
+@router.message(or_f(
+    CommandStart(ignore_case=True),
+    F.text.lower().contains('старт'),
+    F.text.lower().contains('запуск'))
+)
 async def handler_command_start(message: types.Message):
     await message.answer(
         text="""
@@ -19,14 +23,14 @@ async def handler_command_start(message: types.Message):
 Для начала работы нажмите <b>"Добавить товар"</b>
 
 Чтобы узнать, как пользоваться ботом нажмите <b>"Помощь"</b>""",
-        reply_markup=(keyboards.sku.get_kb_sku().attach(keyboards.get_kb_help())).as_markup()
+        reply_markup=keyboards.get_kb_sku_start()
     )
     await message.delete()
 # =================================================================================================
 
 
 # == Обработчик команды /help и кнопки "Помощь" ===================================================
-@router.message(Command('help', ignore_case=True))
+@router.message(or_f(Command('help', ignore_case=True), F.text.lower().contains('помощь')))
 @router.callback_query(F.data == "help")
 async def handler_command_help(msg_cbq: types.Message | types.CallbackQuery):
     if type(msg_cbq) is types.CallbackQuery:
@@ -38,7 +42,7 @@ async def handler_command_help(msg_cbq: types.Message | types.CallbackQuery):
     else:
         await msg_cbq.answer(
             text=help_text,
-            reply_markup=keyboards.get_kb_sku().as_markup()
+            reply_markup=keyboards.get_kb_sku_start()
         )
         await msg_cbq.delete()
 # =================================================================================================
