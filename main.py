@@ -30,6 +30,7 @@ async def on_shutdown():
 async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
+
     # Фильтры для всех подключенных роутеров!!!)
     dp.message.filter(F.chat.type == 'private')
     dp.callback_query.filter(F.message.chat.type == 'private')
@@ -41,10 +42,13 @@ async def main():
 
     bot = Bot(token=config.bot.token,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
     # Удаляем меню команд в групповых чатах
     await bot.delete_my_commands(scope=BotCommandScopeDefault())
+
     # Прописываем меню команд для приватного чата с ботом
     await bot.set_my_commands(commands=commands_menu, scope=BotCommandScopeAllPrivateChats())
+
     # Удаляем неполученные/необработанные обновления/сообщения
     await bot.delete_webhook(drop_pending_updates=True)
 
