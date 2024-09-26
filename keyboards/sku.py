@@ -15,68 +15,23 @@
 # ⚠️ - https://emojis.wiki/ru/preduprezhdenie/
 
 
-from aiogram.types import InlineKeyboardButton, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import InlineKeyboardButton, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from .others import get_kb_yes_no
 
-# == InlineKeyboar ================================================================================
-sku_kb_buttons = dict(
-    add=InlineKeyboardButton(text="📦 Добавить товар", callback_data="sku_add"),
-    cancel=InlineKeyboardButton(text="❌ Отменить добавление товара", callback_data="sku_cancel"),
-    save=InlineKeyboardButton(text="📦 Завершить добавление товара", callback_data="sku_save"),
-    photo_delete=InlineKeyboardButton(text="🗑️ Удалить это фото", callback_data="sku_photo_delete"),
-    delete=InlineKeyboardButton(text="🗑️ Удалить товар", callback_data="sku_delete"),
-    delete_cancel=InlineKeyboardButton(text="❌ Отменить удаление товара", callback_data="sku_delete_cancel"),
-)
 
-
-def get_kb_sku_builder(buttons: list[str], adjust: list[int] | int = 1):
-    kb = InlineKeyboardBuilder()
-    for btn in buttons:
-        kb.add(sku_kb_buttons.get(btn))
-
-    if adjust:
-        if type(adjust) is list:
-            kb.adjust(*adjust)
-        elif type(adjust) is int:
-            kb.adjust(adjust)
-
-    return kb
-
-
-def get_kb_sku():
-    return get_kb_sku_builder(buttons=['add'])
-
-
-def get_kb_sku_cancel():
-    return get_kb_sku_builder(buttons=['cancel'])
-
-
-def get_kb_sku_photo():
-    return get_kb_sku_builder(
-        buttons=[
-            # 'save',
-            'photo_delete',
-            # 'cancel',
-        ]
-    )
-
-
-def get_kb_sku_save_cancel():
-    return get_kb_sku_builder(
-        buttons=[
-            'save',
-            'cancel',
-        ]
+# == InlineKeyboard ================================================================================
+def get_kb_sku_photo_delete():
+    return InlineKeyboardBuilder().add(
+        InlineKeyboardButton(
+            text="🗑️ Удалить это фото",
+            callback_data="sku_photo_delete"
+        )
     )
 
 
 def get_kb_sku_cancel_yes_no():
     return get_kb_yes_no(prefix="sku_cancel_")
-
-
-def get_kb_sku_delete_cancel():
-    return get_kb_sku_builder(buttons=['delete_cancel'])
 
 
 def get_kb_sku_delete_yes_no():
@@ -87,26 +42,24 @@ def get_kb_sku_delete_yes_no():
 def get_kb_sku_start():
     kb = ReplyKeyboardBuilder()
     kb.row(
-        KeyboardButton(text='📦 Добавить товар'),
-        KeyboardButton(text='❓ Помощь')
+        KeyboardButton(text="📦 Добавить товар"),
+        KeyboardButton(text="❓ Помощь")
     )
-    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True, )
-
-
-def get_kb_sku_add():
-    kb = ReplyKeyboardBuilder()
-    kb.row(
-        KeyboardButton(text='📦 Добавить товар')
-    )
-    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+    return kb.as_markup(resize_keyboard=True)  # , one_time_keyboard=True, )
 
 
 def get_kb_sku_fsm(input_field_placeholder: str = None):
     kb = ReplyKeyboardBuilder()
     kb.row(
-        KeyboardButton(text='📦 Завершить'),
-        KeyboardButton(text='❌ Отменить')
+        KeyboardButton(text="📦 Завершить"),
+        KeyboardButton(text="❌ Отменить")
     )
     return kb.as_markup(resize_keyboard=True, input_field_placeholder=input_field_placeholder)
 
 
+def get_kb_sku_delete():
+    kb = ReplyKeyboardBuilder()
+    kb.row(
+        KeyboardButton(text="❌ Отменить удаление товара")
+    )
+    return kb.as_markup(resize_keyboard=True, input_field_placeholder="Введите артикул товара")

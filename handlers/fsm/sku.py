@@ -174,32 +174,24 @@ class SkuData:
 # == Добавление товара ============================================================================
 # Обработчик комады /add и кнопки "Добавить товар" для запуска машины состояний для добавления товара
 @router.message(
-    or_f(Command('add', ignore_case=True), F.text.lower().contains('добавить')),
+    or_f(
+        Command('add', ignore_case=True),
+        F.text.lower().contains('добавить')
+    ),
     StateFilter(default_state)
 )
-@router.callback_query(F.data == "sku_add", StateFilter(default_state))
-async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
+async def handler_sku_add(message: types.Message, state: FSMContext):
     await state.set_state(FSMSku.name)
 
-    if type(msg_cbq) is types.CallbackQuery:
-        func_answer = msg_cbq.message.edit_text
-        chat = msg_cbq.message.chat
+    await message.delete()
 
-        await msg_cbq.answer()
-    else:
-        func_answer = msg_cbq.answer
-        chat = msg_cbq.chat
-
-        await msg_cbq.delete()
-
-    data = dict(sku_data=SkuData(store=img_folder, chat=chat))
+    data = dict(sku_data=SkuData(store=img_folder, chat=message.chat))
     await state.set_data(data)
 
-    await func_answer(
+    await message.answer(
         text="Начинаем добавлять товар.\n\n"
              "📝 Введите артикул товара:",
         reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder='Введите артикул товара')
-        # reply_markup = keyboards.get_kb_sku_cancel().as_markup()
     )
 # =================================================================================================
 
@@ -207,8 +199,12 @@ async def handler_sku_add(msg_cbq: types.Message | types.CallbackQuery, state: F
 # == Отмена добавления товара =====================================================================
 # Обработчик комады /cancel для остановки машины состояний добавления товара
 @router.message(
-    or_f(Command('cancel', ignore_case=True), F.text.lower().contains('отменить')),
-    ~StateFilter(default_state)
+    or_f(
+        Command('cancel', ignore_case=True),
+        F.text.lower().contains('отменить')
+    ),
+    ~StateFilter(default_state),
+    ~StateFilter(FSMSku.delete)
 )
 async def handler_cmd_cancel(message: types.Message, state: FSMContext):
     if await state.get_state() == FSMSku.name:
@@ -216,8 +212,7 @@ async def handler_cmd_cancel(message: types.Message, state: FSMContext):
 
         await message.answer(
             text=f"❌ 📦 Добавление товара отменено!",
-            reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder='Введите артикул товара')
-            # reply_markup = keyboards.get_kb_sku().as_markup()
+            reply_markup=keyboards.get_kb_sku_start()
         )
     else:
         data = await state.get_data()
@@ -230,34 +225,14 @@ async def handler_cmd_cancel(message: types.Message, state: FSMContext):
     await message.delete()
 
 
-# Обработчик кнопки "Отменить добавление товара" для остановки машины состояний добавления товара
-@router.callback_query(F.data == "sku_cancel", ~StateFilter(default_state))
-async def handler_sku_cancel(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-
-    if await state.get_state() == FSMSku.name:
-        await state.clear()
-
-        await callback.message.edit_text(
-            text=f"❌ 📦 Добавление товара отменено!",
-            reply_markup=keyboards.get_kb_sku().as_markup()
-        )
-    else:
-        data = await state.get_data()
-        sku_data = data['sku_data']
-
-        await callback.message.answer(
-            text=f"⁉️ Вы действительно хотите отменить добавление товара{sku_data.get_name_text2()}?",
-            reply_markup=keyboards.get_kb_sku_cancel_yes_no().as_markup()
-        )
-
-
 # Обработчик кнопки "Да" для подтверждения остановки машины состояний добавления товара
-@router.callback_query(F.data == "sku_cancel_btn_yes", ~StateFilter(default_state))
+@router.callback_query(
+    F.data == "sku_cancel_btn_yes",
+    ~StateFilter(default_state)
+)
 async def handler_sku_cancel_yes(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
-    message = callback.message
     data = await state.get_data()
     sku_data = data['sku_data']
     num_photos = len(sku_data.photos)
@@ -266,15 +241,18 @@ async def handler_sku_cancel_yes(callback: types.CallbackQuery, state: FSMContex
 
     await state.clear()
 
-    await message.edit_text(
+    await callback.message.delete()
+    await callback.message.answer(
         text=f"❌ 📦 Добавление товара{sku_data.get_name_text2()} отменено (удалено {num_photos} фото)!",
         reply_markup=keyboards.get_kb_sku_start()
-        # reply_markup = keyboards.get_kb_sku().as_markup()
     )
 
 
 # Обработчик кнопки "Нет" для отмены остановки машины состояний добавления товара
-@router.callback_query(F.data == "sku_cancel_btn_no", ~StateFilter(default_state))
+@router.callback_query(
+    F.data == "sku_cancel_btn_no",
+    ~StateFilter(default_state)
+)
 async def handler_sku_cancel_no(callback: types.CallbackQuery):
     await callback.answer(reply_markup=keyboards.get_kb_sku_fsm())
 
@@ -284,7 +262,10 @@ async def handler_sku_cancel_no(callback: types.CallbackQuery):
 
 # == Артикул товара ===============================================================================
 # Обработчик состояния для ввода артикула товара
-@router.message(StateFilter(FSMSku.name), F.text)
+@router.message(
+    StateFilter(FSMSku.name),
+    F.text
+)
 async def handler_state_name(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
@@ -296,17 +277,20 @@ async def handler_state_name(message: types.Message, state: FSMContext):
     await message.reply(
         text=f"Артикул товара: {sku_data.get_name_text()}.\n\n"
              f"📸 Сфотографируйте товар!",
-        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder="Сфотографируйте товар")
     )
 
 
 # Обработчик состояния для ввода артикула товара, если прислали не текст
-@router.message(StateFilter(FSMSku.name), ~F.text)
+@router.message(
+    StateFilter(FSMSku.name),
+    ~F.text
+)
 async def handler_state_name_not_text(message: types.Message):
     await message.reply(
         text=f"Это не артикул!\n\n"
              f"📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder="Введите артикул товара")
     )
 # =================================================================================================
 
@@ -314,9 +298,15 @@ async def handler_state_name_not_text(message: types.Message):
 # == Сохранение товара ============================================================================
 # Обработчик комады /save и кнопки "Завершить добавление товара"
 # для завершения машины состояний добавления товара и сохранения фото товара
-@router.message(or_f(Command('save', ignore_case=True), F.text.lower() == "сохранить"), StateFilter(FSMSku.photos))
-@router.callback_query(F.data == "sku_save", StateFilter(FSMSku.photos))
-async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
+@router.message(
+    or_f(
+        Command('save', ignore_case=True),
+        F.text.lower().contains("завершить"),
+        F.text.lower().contains("сохранить"),
+    ),
+    StateFilter(FSMSku.photos)
+)
+async def handler_sku_save(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
@@ -328,24 +318,17 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
 
     await state.clear()
 
-    from_user = msg_cbq.from_user
-
-    if type(msg_cbq) is types.CallbackQuery:
-        await msg_cbq.answer()
-        await msg_cbq.message.delete_reply_markup()
-        msg_cbq = msg_cbq.message
-
     text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
            f"Сохранено {len(sku_data.photos)} фото:\n" \
            f"{saved_files_text}"
-    await msg_cbq.answer(
+    await message.answer(
         text=text,
-        reply_markup=keyboards.get_kb_sku().as_markup()
+        reply_markup=keyboards.get_kb_sku_start()
     )
 
     await add_log(
-        user_id=from_user.id,
-        user_name=from_user.full_name,
+        user_id=message.from_user.id,
+        user_name=message.from_user.full_name,
         sku=sku_data.name,
         action='save',
         description=text
@@ -355,7 +338,10 @@ async def handler_sku_save(msg_cbq: types.Message | types.CallbackQuery, state: 
 
 # == Фото товара ==================================================================================
 # Обработчик состояния для добавдения фото товара
-@router.message(StateFilter(FSMSku.photos), F.photo)
+@router.message(
+    StateFilter(FSMSku.photos),
+    F.photo
+)
 async def handler_sku_photos(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
@@ -366,23 +352,29 @@ async def handler_sku_photos(message: types.Message, state: FSMContext):
 
     await message.reply(
         text=f"✅ 📸 Фото для товара{sku_data.get_name_text2()} получено!\n\n"
-             f"📸 Сфотографируйте товар!",
-        reply_markup=keyboards.get_kb_sku_photo().as_markup()
+             "📸 Сфотографируйте товар!",
+        reply_markup=keyboards.get_kb_sku_photo_delete().as_markup()
     )
 
 
 # Обработчик состояния для добавдения фото товара, если прислали не фото
-@router.message(StateFilter(FSMSku.photos), ~F.photo)
+@router.message(
+    StateFilter(FSMSku.photos),
+    ~F.photo
+)
 async def handler_sku_photos_not_photo(message: types.Message):
     await message.reply(
-        text=f"Это не фото!\n\n"
-             f"📸 Сфотографируйте товар!",
-        reply_markup=keyboards.get_kb_sku_save_cancel().as_markup()
+        text="Это не фото!\n\n"
+             "📸 Сфотографируйте товар!",
+        reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder="Сфотографируйте товар")
     )
 
 
 # Обработчик кнопки "Удалить это фото" для подтверждения остановки машины состояний добавления товара
-@router.callback_query(StateFilter(FSMSku.photos), F.data == "sku_photo_delete")
+@router.callback_query(
+    StateFilter(FSMSku.photos),
+    F.data == "sku_photo_delete"
+)
 async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
@@ -394,46 +386,64 @@ async def handler_sku_photo_delete(callback: types.CallbackQuery, state: FSMCont
         sku_data.photos.pop(message.reply_to_message.message_id)
         await state.set_data(data)
 
-        await message.reply_to_message.delete()
-
-        await message.edit_text(
+        await message.reply_to_message.reply(
             text=f"🗑️ 📸 Это фото для товара{sku_data.get_name_text2()} удалено!\n\n"
                  f"📸 Сфотографируйте товар!",
-            reply_markup=keyboards.get_kb_sku_save_cancel().as_markup()
+            reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder="Сфотографируйте товар")
         )
+        await message.reply_to_message.delete()
+        await message.delete()
+
+
 # =================================================================================================
 
 
 # == Удаление товара ============================================================================
 # Обработчик комады /delete и кнопки "Удалить товар" для запуска машины состояний для удаления товара
-@router.message(Command('delete', ignore_case=True), StateFilter(default_state))
-@router.callback_query(F.data == "sku_delete", StateFilter(default_state))
-async def handler_sku_delete(msg_cbq: types.Message | types.CallbackQuery, state: FSMContext):
+@router.message(
+    or_f(
+        Command('delete', ignore_case=True),
+        F.text.lower().contains("удалить"),
+    ),
+    StateFilter(default_state)
+)
+async def handler_sku_delete(message: types.Message, state: FSMContext):
     await state.set_state(FSMSku.delete)
 
-    if type(msg_cbq) is types.CallbackQuery:
-        func_answer = msg_cbq.message.answer
-        chat = msg_cbq.message.chat
+    await message.delete()
 
-        await msg_cbq.answer()
-    else:
-        func_answer = msg_cbq.answer
-        chat = msg_cbq.chat
-
-        await msg_cbq.delete()
-
-    data = dict(sku_data=SkuData(store=img_folder, chat=chat))
+    data = dict(sku_data=SkuData(store=img_folder, chat=message.chat))
     await state.set_data(data)
 
-    await func_answer(
+    await message.answer(
         text="🗑️ Начинаем удалять товар.\n\n"
              "📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_delete_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_delete()
     )
 
 
+@router.message(
+    or_f(
+        Command('cancel', ignore_case=True),
+        F.text.lower().contains('отменить')
+    ),
+    StateFilter(FSMSku.delete)
+)
+async def handler_state_delete_cancel(message: types.Message, state: FSMContext):
+    await state.clear()
+
+    await message.answer(
+        text="❌ 📦 Удаление товара отменено!",
+        reply_markup=keyboards.get_kb_sku_start()
+    )
+    await message.delete()
+
+
 # Обработчик состояния для ввода артикула удаляемого товара
-@router.message(StateFilter(FSMSku.delete), F.text)
+@router.message(
+    StateFilter(FSMSku.delete),
+    F.text
+)
 async def handler_state_delete(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
@@ -447,17 +457,23 @@ async def handler_state_delete(message: types.Message, state: FSMContext):
 
 
 # Обработчик состояния для ввода артикула удаляемого товара, если прислали не текст
-@router.message(StateFilter(FSMSku.delete), ~F.text)
+@router.message(
+    StateFilter(FSMSku.delete),
+    ~F.text
+)
 async def handler_state_delete_not_text(message: types.Message):
     await message.reply(
         text=f"Это не артикул!\n\n"
              f"📝 Введите артикул товара:",
-        reply_markup=keyboards.get_kb_sku_delete_cancel().as_markup()
+        reply_markup=keyboards.get_kb_sku_delete()
     )
 
 
 # Обработчик кнопки "Да" для подтверждения удаления товара
-@router.callback_query(F.data == "sku_delete_btn_yes", ~StateFilter(default_state))
+@router.callback_query(
+    F.data == "sku_delete_btn_yes",
+    ~StateFilter(default_state)
+)
 async def handler_sku_delete_yes(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
@@ -484,19 +500,22 @@ async def handler_sku_delete_yes(callback: types.CallbackQuery, state: FSMContex
 
     await state.clear()
 
-    await message.edit_text(
+    await message.reply(
         text=text,
-        reply_markup=keyboards.get_kb_sku().as_markup()
+        reply_markup=keyboards.get_kb_sku_start()
     )
 
 
 # Обработчик кнопки "Нет" для отмены удаления товара
 @router.callback_query(F.data == "sku_delete_btn_no", ~StateFilter(default_state))
-@router.callback_query(F.data == "sku_delete_cancel", ~StateFilter(default_state))
 async def handler_sku_delete_no(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
     await state.clear()
 
+    await callback.message.answer(
+        text="❌ 📦 Удаление товара отменено!",
+        reply_markup=keyboards.get_kb_sku_start()
+    )
     await callback.message.delete()
 # =================================================================================================

@@ -1,17 +1,10 @@
-from aiogram.types import ReplyKeyboardRemove
-
 from .sku import (
-    get_kb_sku_builder,
-    get_kb_sku,
-    get_kb_sku_cancel,
     get_kb_sku_cancel_yes_no,
-    get_kb_sku_photo,
-    get_kb_sku_save_cancel,
-    get_kb_sku_delete_cancel,
+    get_kb_sku_photo_delete,
     get_kb_sku_delete_yes_no,
     get_kb_sku_start,
-    get_kb_sku_add,
     get_kb_sku_fsm,
+    get_kb_sku_delete,
 )
 from .others import (
     get_kb_yes_no,

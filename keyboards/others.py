@@ -17,26 +17,19 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def get_kb_yes_no(prefix: str = ''):
-    kb = InlineKeyboardBuilder()
-    kb.add(
+    return InlineKeyboardBuilder().add(
         InlineKeyboardButton(text="✔️ Да", callback_data=f"{prefix}btn_yes"),
         InlineKeyboardButton(text="❌ Нет", callback_data=f"{prefix}btn_no"),
-    )
-    kb.adjust(2)
-    return kb
+    ).adjust(2)
 
 
 def get_kb_help():
-    kb = InlineKeyboardBuilder()
-    kb.add(
+    return InlineKeyboardBuilder().add(
         InlineKeyboardButton(text="❓ Помощь", callback_data="help"),
     )
-    return kb
 
 
 def get_kb_goto_bot():
-    kb = InlineKeyboardBuilder()
-    kb.add(
+    return InlineKeyboardBuilder().add(
         InlineKeyboardButton(text="👉 Перейти к боту", url='https://t.me/nsa_tele_bot'),
     )
-    return kb
