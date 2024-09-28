@@ -3,6 +3,7 @@ import logging
 # import sys
 
 from aiogram import Bot, Dispatcher, F
+from aiogram.filters import Command, or_f, and_f
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommandScopeDefault, BotCommandScopeAllPrivateChats
@@ -32,7 +33,15 @@ async def main():
     dp.include_router(handlers_router)
 
     # Фильтры для всех подключенных роутеров!!!)
-    dp.message.filter(F.chat.type == 'private')
+    dp.message.filter(
+        or_f(
+            F.chat.type == 'private',
+            and_f(
+                Command('admin', ignore_case=True),
+                F.from_user.id.in_(config.bot.admins)
+            )
+        )
+    )
     dp.callback_query.filter(F.message.chat.type == 'private')
 
     dp.startup.register(on_startup)
