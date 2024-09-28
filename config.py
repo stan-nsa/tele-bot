@@ -10,7 +10,6 @@ from environs import Env
 class TgBot:
     token: str          # Токен для доступа к телеграм-боту
     admins: list[int]   # Список id администраторов бота
-    users: list[int]    # Список id пользователей бота
     chats: list[int]    # Список id чатов бота
 
 
@@ -34,6 +33,7 @@ class Config:
     bot: TgBot
     img: ImageConfig
     db: DatabaseConfig
+    demo: bool
 
 
 env = Env()
@@ -45,16 +45,18 @@ config = Config(
     bot=TgBot(
         token=env('BOT_TOKEN', default=''),
         admins=env.list('ADMINS', subcast=int, default=[]),
-        users=env.list('USERS', subcast=int, default=[]),
-        chats=env.list('CHATS', subcast=int, default=[])),
+        chats=env.list('CHATS', subcast=int, default=[]),
+    ),
     img=ImageConfig(
         folder=env('IMG_FOLDER', default='.'),
         file_name_template=env('IMG_FILE_NAME_TEMPLATE', default='%s_%d.jpg'),
-        resolution=env.int('IMG_RESOLUTION', default=1280)),
+        resolution=env.int('IMG_RESOLUTION', default=1280),
+    ),
     db=DatabaseConfig(
         database=env('DATABASE', default=''),
         db_host=env('DB_HOST', default=''),
         db_user=env('DB_USER', default=''),
-        db_password=env('DB_PASSWORD', default='')
-    )
+        db_password=env('DB_PASSWORD', default=''),
+    ),
+    demo=env.bool('DEMO')#, default=False),
 )

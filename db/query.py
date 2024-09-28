@@ -18,10 +18,26 @@ async def get_user(tg_user: Tg_User, status: str = None):
         return user
 
 
+# Получить список юзеров бота из базы по статусу
+async def get_users(status: str = 'member'):
+    async with db_session() as session:
+        query = select(User)
+
+        if status:
+            query = query.where(User.status == status)
+
+        users = await session.scalar(query)
+
+        return users
+
+
 # Удалить юзера из базы по telegram-id
 async def delete_user(tg_user: Tg_User):
     async with db_session() as session:
-        await session.execute(delete(User).where(User.id == tg_user.id))
+        await session.execute(
+            delete(User).
+            where(User.id == tg_user.id)
+        )
         await session.commit()
 
 
@@ -36,14 +52,18 @@ async def update_user(tg_user: Tg_User, status: str = 'member'):
                 'full_name': tg_user.full_name,
                 'status': status,
             }
-            await session.execute(update(User).where(User.id == tg_user.id).values(update_values))
+            await session.execute(
+                update(User).
+                where(User.id == tg_user.id).
+                values(update_values)
+            )
             await session.commit()
     else:
-        await add_user(tg_user=tg_user)
+        await add_user(tg_user=tg_user, status=status)
 
 
 # Удалить юзера в базу
-async def add_user(tg_user: Tg_User):
+async def add_user(tg_user: Tg_User, status: str = 'member'):
     async with db_session() as session:
         user = User(
             id=tg_user.id,
@@ -51,7 +71,7 @@ async def add_user(tg_user: Tg_User):
             last_name=tg_user.last_name,
             username=tg_user.username,
             full_name=tg_user.full_name,
-            status='member'
+            status=status
         )
         session.add(user)
         await session.commit()

@@ -276,7 +276,7 @@ async def handler_state_name(message: types.Message, state: FSMContext):
 
     await message.reply(
         text=f"Артикул товара: {sku_data.get_name_text()}.\n\n"
-             f"📸 Сфотографируйте товар!",
+              "📸 Сфотографируйте товар!",
         reply_markup=keyboards.get_kb_sku_fsm(input_field_placeholder="Сфотографируйте товар")
     )
 
@@ -310,29 +310,37 @@ async def handler_sku_save(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sku_data = data['sku_data']
 
-    await sku_data.save_photos_to_store()
+    if sku_data.photos:
+        await sku_data.save_photos_to_store()
 
-    saved_files_text = ''
-    for photo in sku_data.photos.values():
-        saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
+        saved_files_text = ''
+        for photo in sku_data.photos.values():
+            saved_files_text += f"📸️ {photo.name} - разрешение: {photo.width} x {photo.height}\n"
 
-    await state.clear()
+        await state.clear()
 
-    text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
-           f"Сохранено {len(sku_data.photos)} фото:\n" \
-           f"{saved_files_text}"
-    await message.answer(
-        text=text,
-        reply_markup=keyboards.get_kb_sku_start()
-    )
+        text = f"✅ 📦 Товар{sku_data.get_name_text2()} сохранен!\n\n" \
+               f"Сохранено {len(sku_data.photos)} фото:\n" \
+               f"{saved_files_text}"
+        await message.answer(
+            text=text,
+            reply_markup=keyboards.get_kb_sku_start()
+        )
 
-    await add_log(
-        user_id=message.from_user.id,
-        user_name=message.from_user.full_name,
-        sku=sku_data.name,
-        action='save',
-        description=text
-    )
+        await add_log(
+            user_id=message.from_user.id,
+            user_name=message.from_user.full_name,
+            sku=sku_data.name,
+            action='save',
+            description=text
+        )
+    else:
+        await message.answer(
+            text="Вы не сделали ниодного фото товара!\n\n"
+                 "📸 Сфотографируйте товар!",
+            reply_markup=message.reply_markup
+        )
+
 # =================================================================================================
 
 

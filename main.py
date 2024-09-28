@@ -32,8 +32,8 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers_router)
 
-    # Фильтры для всех подключенных роутеров!!!)
-    dp.message.filter(
+    # -- Фильтры для всех подключенных роутеров!!!) -----------------
+    dp.message.filter(  # Фильтр: пропускать только сообщения в личке или только от админов
         or_f(
             F.chat.type == 'private',
             and_f(
@@ -43,6 +43,7 @@ async def main():
         )
     )
     dp.callback_query.filter(F.message.chat.type == 'private')
+    # ---------------------------------------------------------------
 
     dp.startup.register(on_startup)
     dp.shutdown.register(on_startup)

@@ -13,7 +13,13 @@ class UserMiddleware(BaseMiddleware):
                        event: TelegramObject,
                        data: Dict[str, Any]
                        ) -> Any:
-        if (event.event.from_user.id in config.bot.admins) or (await get_user(event.event.from_user, 'member')):
+        if config.demo:
+            result = await handler(event, data)
+        elif not config.bot.admins:
+            result = await handler(event, data)
+        elif event.event.from_user.id in config.bot.admins:
+            result = await handler(event, data)
+        elif await get_user(event.event.from_user, 'member'):
             result = await handler(event, data)
         else:
             result = None

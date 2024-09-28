@@ -11,3 +11,7 @@ from .others import (
     get_kb_help,
     get_kb_goto_bot,
 )
+from .admin import (
+    get_kb_admin,
+    get_kb_admin_users,
+)
