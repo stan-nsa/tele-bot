@@ -1,8 +1,11 @@
 from aiogram import Bot, Router, types, F
 from aiogram.filters import Command
 import keyboards.admin as kb_admin
+from keyboards import get_kb_yes_no
 
 from config import config
+
+from db import query
 
 # from filters import IsAdmin
 
@@ -30,7 +33,7 @@ async def handler_command_admin(message: types.Message, bot: Bot):
         reply_markup=kb_admin.get_kb_admin(
             user_id=message.from_user.id,
             chat_id=message.chat.id
-        ).as_markup()
+        )
     )
 
 
@@ -43,7 +46,7 @@ async def handler_command_admin(message: types.Message):
             reply_markup=kb_admin.get_kb_admin(
                 user_id=message.from_user.id,
                 chat_id=message.chat.id
-            ).as_markup()
+            )
         )
     else:
         await message.answer(
@@ -58,6 +61,56 @@ async def handler_adm_get_users(callback: types.CallbackQuery):
         text="Пользователи бота:",
         reply_markup=await kb_admin.get_kb_admin_users()
     )
+
+
+@router.callback_query(F.data.startswith("adm_get_user:"))
+async def handler_adm_get_user(callback: types.CallbackQuery):
+    await callback.answer()
+
+    cmd_str, id_str, full_name_str = callback.data.split(":")
+
+    await callback.message.answer(
+        text="Пользователь бота:\n"
+             f"<b>{full_name_str}</b>",
+        reply_markup=kb_admin.get_kb_admin_user(user_id=id_str, user_full_name=full_name_str)
+    )
+
+
+@router.callback_query(F.data.startswith("adm_user_delete:"))
+async def handler_adm_user_delete(callback: types.CallbackQuery):
+    await callback.answer()
+
+    cmd_str, id_str, full_name_str = callback.data.split(":")
+
+    await callback.message.edit_text(
+        text="🗑️ Удалить пользователя бота:\n"
+             f"<b>{full_name_str}</b>?",
+        reply_markup=get_kb_yes_no(prefix=f"adm_del_user:{id_str}:{full_name_str}:").as_markup()
+    )
+
+
+@router.callback_query(F.data.startswith("adm_del_user:"))
+async def handler_adm_delete_user(callback: types.CallbackQuery):
+    await callback.answer()
+
+    cmd_str, id_str, full_name_str, btn_str = callback.data.split(":")
+
+    if btn_str == "btn_yes":
+        await query.delete_user_by_id(user_id=id_str)
+
+        await callback.message.edit_text(
+            text="Пользователь бота:\n"
+                 f"<b>{full_name_str}</b>\n"
+                 "🗑️ Удален!",
+            reply_markup=None
+        )
+    else:
+        await callback.message.edit_text(
+            text="🗑️ Удаление пользователя бота:\n"
+                 f"<b>{full_name_str}</b>\n"
+                 "Отменено!",
+            reply_markup=None
+        )
 
 
 @router.callback_query(F.data.startswith("adm_get_"))

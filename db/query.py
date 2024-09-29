@@ -26,7 +26,7 @@ async def get_users(status: str = 'member'):
         if status:
             query = query.where(User.status == status)
 
-        users = await session.scalar(query)
+        users = await session.scalars(query)
 
         return users
 
@@ -37,6 +37,17 @@ async def delete_user(tg_user: Tg_User):
         await session.execute(
             delete(User).
             where(User.id == tg_user.id)
+        )
+        await session.commit()
+
+
+# Пометить юзера в базе как <not member> по telegram-id
+async def delete_user_by_id(user_id: int):
+    async with db_session() as session:
+        await session.execute(
+            update(User).
+            where(User.id == user_id).
+            values({'status': 'not member'})
         )
         await session.commit()
 

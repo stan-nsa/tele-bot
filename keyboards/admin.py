@@ -20,7 +20,7 @@ def get_kb_admin(user_id, chat_id):
             text="Пользователи бота",
             callback_data="adm_get_users"
         ),
-    ).adjust(1)
+    ).adjust(1).as_markup()
 
 
 async def get_kb_admin_users():
@@ -33,8 +33,17 @@ async def get_kb_admin_users():
             kb.add(
                 InlineKeyboardButton(
                     text=f"{user.full_name}",
-                    callback_data=f"adm_get_user:{user.id}"
+                    callback_data=f"adm_get_user:{user.id}:{user.full_name}"
                 )
             )
 
-    return kb.as_markup()
+    return kb.adjust(1).as_markup()
+
+
+def get_kb_admin_user(user_id: str, user_full_name: str):
+    return InlineKeyboardBuilder().add(
+        InlineKeyboardButton(
+            text="🗑️ Удалить",
+            callback_data=f"adm_user_delete:{user_id}:{user_full_name}"
+        )
+    ).adjust(1).as_markup()
