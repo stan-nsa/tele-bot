@@ -15,6 +15,8 @@
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from config import config
+
 
 def get_kb_yes_no(prefix: str = ''):
     return InlineKeyboardBuilder().add(
@@ -31,5 +33,5 @@ def get_kb_help():
 
 def get_kb_goto_bot():
     return InlineKeyboardBuilder().add(
-        InlineKeyboardButton(text="👉 Перейти к боту", url='https://t.me/nsa_tele_bot'),
+        InlineKeyboardButton(text="👉 Перейти к боту", url=config.bot.bot_url),
     )

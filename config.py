@@ -11,6 +11,7 @@ class TgBot:
     token: str          # Токен для доступа к телеграм-боту
     admins: list[int]   # Список id администраторов бота
     chats: list[int]    # Список id чатов бота
+    bot_url: str        # URL телеграм-бота
 
 
 @dataclass
@@ -46,6 +47,7 @@ config = Config(
         token=env('BOT_TOKEN', default=''),
         admins=env.list('ADMINS', subcast=int, default=[]),
         chats=env.list('CHATS', subcast=int, default=[]),
+        bot_url=env('BOT_URL', default=''),
     ),
     img=ImageConfig(
         folder=env('IMG_FOLDER', default='.'),
