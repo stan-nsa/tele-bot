@@ -1,6 +1,6 @@
 import asyncio
 import logging
-# import sys
+# import sys 2
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, or_f, and_f
