@@ -45,3 +45,19 @@ async def handler_command_help(message: types.Message):
     )
     await message.delete()
 # =================================================================================================
+
+
+# == Обработчик команды /myid =====================================================================
+@router.message(
+    or_f(
+        Command('myid', ignore_case=True)
+    )
+)
+async def handler_command_help(message: types.Message):
+    id_str = message.from_user.id
+    text = f"Ваш ID:\n{id_str}"
+    await message.answer(
+        text=text,
+    )
+    await message.delete()
+# =================================================================================================
